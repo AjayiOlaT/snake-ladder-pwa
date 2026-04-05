@@ -198,7 +198,11 @@ export default function GamePage() {
     const opponentId = u.id === g.player1_id ? g.player2_id : g.player1_id;
     // Broadcast game_over immediately so opponent sees VICTORY instantly
     bc('game_over', { winnerId: opponentId });
-    await supabase.from('games').update({ status: 'finished', winner_id: opponentId }).eq('id', g.id);
+    await supabase.from('games').update({ 
+      status: 'finished', 
+      winner_id: opponentId,
+      surrendered_by: u.id
+    }).eq('id', g.id);
     router.push('/lobby');
   };
 
@@ -299,36 +303,46 @@ export default function GamePage() {
 
     if (pos === boardMax) { await finishGame(pos, lastEvText, lastEvType); return; }
 
-    // ── Special tile resolution ────────────────────────────────────────────
-    await new Promise(r => setTimeout(r, 500));
-    const cfg = cfgSet[pos];
-    if (cfg) {
+    // ── Recursive tile resolution ──────────────────────────────────────────
+    const resolveSpecialTiles = async (currentPos: number): Promise<number> => {
+      await new Promise(r => setTimeout(r, 600));
+      const cfg = cfgSet[currentPos];
+      if (!cfg) return currentPos;
+
+      let nextPos = currentPos;
       if (cfg.type === 'ladder') {
         sfx.ladderSound();
         lastEvText = 'PROMOTION! 🚀'; lastEvType = 'ladder';
         flash(lastEvText, 'ladder');
         bc('show_ann', { text: lastEvText, type: 'ladder', ms: 2500 });
-        pos = cfg.target!;
+        nextPos = cfg.target!;
       } else if (cfg.type === 'snake') {
         sfx.snakeSound();
         lastEvText = 'DEMOTION! 🐍'; lastEvType = 'snake';
         flash(lastEvText, 'snake');
         bc('show_ann', { text: lastEvText, type: 'snake', ms: 2500 });
-        pos = cfg.target!;
+        nextPos = cfg.target!;
       } else if (cfg.type === 'modifier') {
         lastEvText = cfg.modifier! > 0 ? `BONUS! +${cfg.modifier}` : `PENALTY! ${cfg.modifier}`;
         lastEvType = 'roll';
         flash(lastEvText, 'roll');
         bc('show_ann', { text: lastEvText, type: 'roll', ms: 2500 });
-        pos += cfg.modifier!;
+        nextPos = Math.max(0, Math.min(boardMax, currentPos + cfg.modifier!));
       }
-      // Broadcast the final tile-resolved position
-      if (isP1) setP1Pos(pos); else setP2Pos(pos);
-      bc('move_step', { player: isP1 ? 1 : 2, pos });
 
-      if (pos === boardMax) { await finishGame(pos, lastEvText, lastEvType); return; }
-      await new Promise(r => setTimeout(r, 600));
-    }
+      if (nextPos !== currentPos) {
+        if (isP1) setP1Pos(nextPos); else setP2Pos(nextPos);
+        bc('move_step', { player: isP1 ? 1 : 2, pos: nextPos });
+        if (nextPos === boardMax) return nextPos;
+        // Check AGAIN for the new tile (chained resolution)
+        return await resolveSpecialTiles(nextPos);
+      }
+      return nextPos;
+    };
+
+    pos = await resolveSpecialTiles(pos);
+
+    if (pos === boardMax) { await finishGame(pos, lastEvText, lastEvType); return; }
 
     await new Promise(r => setTimeout(r, 800));
     await persist(pos, false, lastEvText, lastEvType);

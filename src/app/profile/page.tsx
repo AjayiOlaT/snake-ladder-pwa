@@ -9,7 +9,7 @@ export default function ProfilePage() {
    const [supabase] = useState(() => createClient());
    const router = useRouter();
    const [user, setUser] = useState<any>(null);
-   const [stats, setStats] = useState({ played: 0, active: 0, won: 0 });
+   const [stats, setStats] = useState({ played: 0, active: 0, won: 0, lost: 0, surrendered: 0 });
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
@@ -29,10 +29,17 @@ export default function ProfilePage() {
              
          if (!error && games) {
              const active = games.filter(g => g.status !== 'finished').length;
+             const finished = games.filter(g => g.status === 'finished');
+             const won = finished.filter(g => g.winner_id === session.user.id).length;
+             const lost = finished.filter(g => g.winner_id !== session.user.id).length;
+             const surrendered = finished.filter(g => g.surrendered_by === session.user.id).length;
+             
              setStats({
                  played: games.length,
                  active: active,
-                 won: 0 // Deep win/loss validation implemented later
+                 won: won,
+                 lost: lost,
+                 surrendered: surrendered
              });
          }
          setLoading(false);
@@ -79,7 +86,7 @@ export default function ProfilePage() {
                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 flex flex-col shadow-xl">
                      <span className="text-4xl mb-4">🏆</span>
                      <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-1">Victories</p>
-                     <p className="text-5xl font-black font-mono text-purple-400">{stats.won} <span className="text-sm font-medium tracking-normal text-slate-500 line-through">N/A</span></p>
+                     <p className="text-5xl font-black font-mono text-purple-400">{stats.won}</p>
                  </div>
 
                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 flex flex-col shadow-xl relative overflow-hidden">
@@ -89,6 +96,28 @@ export default function ProfilePage() {
                      <p className="text-5xl font-black font-mono text-orange-400 relative z-10">{stats.active}</p>
                  </div>
 
+             </div>
+ 
+             {/* SUB STATS */}
+             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+                 <div className="bg-white/5 border border-white/10 p-4 rounded-3xl text-center">
+                     <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Defeats</p>
+                     <p className="text-2xl font-black text-red-400">{stats.lost}</p>
+                 </div>
+                 <div className="bg-white/5 border border-white/10 p-4 rounded-3xl text-center">
+                     <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Surrenders</p>
+                     <p className="text-2xl font-black text-orange-400">{stats.surrendered}</p>
+                 </div>
+                 <div className="bg-white/5 border border-white/10 p-4 rounded-3xl text-center">
+                     <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Win Rate</p>
+                     <p className="text-2xl font-black text-teal-400">
+                         {stats.played > 0 ? Math.round((stats.won / (stats.won + stats.lost)) * 100) || 0 : 0}%
+                     </p>
+                 </div>
+                 <div className="bg-white/5 border border-white/10 p-4 rounded-3xl text-center">
+                     <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Exp Level</p>
+                     <p className="text-2xl font-black text-indigo-400">{Math.floor(stats.played / 5) + 1}</p>
+                 </div>
              </div>
 
              {/* Recent Matches */}

@@ -171,7 +171,7 @@ export default function GameBoard({ player1Pos, player2Pos, difficulty = 'easy' 
         style={{ 
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-            aspectRatio: `${cols} / ${rows}`
+            aspectRatio: difficulty === 'medium' ? '10 / 6' : `${cols} / ${rows}`
         }}
       >
         
@@ -188,9 +188,9 @@ export default function GameBoard({ player1Pos, player2Pos, difficulty = 'easy' 
               key={`cell-${cellIndex}`}
               className={`relative flex flex-col items-center justify-center rounded-xl bg-white/5 border overflow-visible shadow-inner transition-colors duration-500 hover:bg-white/10 ${isWinner ? 'border-yellow-400/50 bg-yellow-400/20' : 'border-white/10'}`}
             >
-              <span className="absolute top-1 left-1.5 sm:top-1 sm:left-2 text-[8px] sm:text-[10px] font-bold text-white/40">{cellIndex}</span>
+              <span className={`absolute top-0.5 left-1 sm:top-1 sm:left-2 font-bold text-white/40 ${difficulty === 'hard' ? 'text-[6px] sm:text-[8px]' : 'text-[8px] sm:text-[10px]'}`}>{cellIndex}</span>
               
-              {isWinner && <div className={`${difficulty==='hard'?'text-2xl':'text-4xl'} sm:text-4xl drop-shadow-[0_0_15px_rgba(250,204,21,1)] z-20 animate-pulse`}>👑</div>}
+              {isWinner && <div className={`${difficulty==='hard'?'text-xl':'text-4xl'} sm:text-4xl drop-shadow-[0_0_15px_rgba(250,204,21,1)] z-20 animate-pulse`}>👑</div>}
               {cfg?.type === 'modifier' && (
                 <div className={`text-amber-400 font-bold ${difficulty === 'hard'?'text-[10px] px-1 ':'text-xs sm:text-sm px-2 sm:px-3 '} py-0.5 sm:py-1 bg-amber-400/20 rounded-full z-20 shadow-md border border-amber-400/50`}>
                   {cfg.modifier! > 0 ? '+' : ''}{cfg.modifier}
