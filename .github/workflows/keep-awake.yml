@@ -1,0 +1,26 @@
+name: Supabase Health Heartbeat
+on:
+  schedule:
+    - cron: '0 0 */3 * *' # Every 3 days at midnight
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          # Perfrom a simple select against the profiles table to count as active database traffic
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1" \
+          -H "apikey: ${SUPABASE_ANON_KEY}" \
+          -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "Successfully pinged Supabase. Project remains active! ✅"
+          else
+            echo "Ping failed with status $RESPONSE. Please check your Supabase secrets. ❌"
+            exit 1
+          fi
