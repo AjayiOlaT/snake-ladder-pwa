@@ -171,7 +171,7 @@ export default function GameBoard({ player1Pos, player2Pos, difficulty = 'easy' 
         style={{ 
             gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-            aspectRatio: difficulty === 'medium' ? '10 / 6' : `${cols} / ${rows}`
+            aspectRatio: difficulty === 'medium' ? '10 / 9' : (difficulty === 'hard' ? '1 / 1' : '6 / 5')
         }}
       >
         
