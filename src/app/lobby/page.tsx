@@ -59,40 +59,25 @@ export default function LobbyPage() {
        setErrorMsg('');
 
        const pin = joinPin.toUpperCase().trim();
-       
-       // Find the waiting game
-       const { data, error } = await supabase
-           .from('games')
-           .select('*')
-           .eq('join_code', pin)
-           .eq('status', 'waiting')
-           .single();
-           
-       if (error || !data) {
-           setErrorMsg('Invalid PIN, or the game has already started!');
-           setIsJoining(false);
+
+       // Call the SECURITY DEFINER RPC — bypasses the RLS block that prevents
+       // Player 2 from updating a row they're not yet a participant of.
+       const { data: gameId, error } = await supabase
+           .rpc('join_game', { p_join_code: pin });
+
+       setIsJoining(false);
+
+       if (error || !gameId) {
+           setErrorMsg(
+               error?.message?.includes('own game')
+                   ? "You can't join your own game!"
+                   : 'Invalid PIN or the game has already started!'
+           );
            return;
        }
 
-       // Update the game to active and add player 2!
-       const { error: updateError } = await supabase
-           .from('games')
-           .update({ 
-               player2_id: user.id, 
-               status: 'active',
-               current_turn_id: data.player1_id // Player 1 strictly gets first turn
-           })
-           .eq('id', data.id);
-           
-       setIsJoining(false);
-       
-       if (updateError) {
-           setErrorMsg('Failed to join game!');
-           return;
-       }
-       
-       // Success! Route to the arena
-       router.push(`/game/${data.id}`);
+       // Success! Route to the arena — host will press START MATCH
+       router.push(`/game/${gameId}`);
    };
 
    if (!user) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
