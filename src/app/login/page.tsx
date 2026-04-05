@@ -63,6 +63,7 @@ export default function LoginPage() {
                   theme="dark"
                   providers={['google']}
                   magicLink={false}
+                  showLinks={false}
                   redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/lobby` : ''}
                />
             </div>
