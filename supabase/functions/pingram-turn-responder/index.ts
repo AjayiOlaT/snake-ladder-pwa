@@ -1,13 +1,14 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { Pingram } from 'npm:pingram';
 
-// Initialize Pingram 
-const PINGRAM_CLIENT_ID = "o5ophu4m73vc39cnn3tc2oukkr";
-const PINGRAM_API_KEY = "pingram_sk_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJrZXlfMjM0MWE3MDc1NjEwNGNlNTRlYTQ0ZWY2NTAyNDk0MTEiLCJ2ZXJzaW9uIjoxLCJhY2NvdW50SWQiOiJvNW9waHU0bTczdmMzOWNubjN0YzJvdWtrciIsImtleVR5cGUiOiJzZWNyZXQiLCJlbnZpcm9ubWVudElkIjoibzVvcGh1NG03M3ZjMzljbm4zdGMyb3Vra3IifQ.Kpl4mXw0UmcXd_vIvz68OQ0F8DHsYKaqfRwLUccem0c";
+const pingram = new Pingram({
+  apiKey: 'pingram_sk_eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJrZXlfMjM0MWE3MDc1NjEwNGNlNTRlYTQ0ZWY2NTAyNDk0MTEiLCJ2ZXJzaW9uIjoxLCJhY2NvdW50SWQiOiJvNW9waHU0bTczdmMzOWNubjN0YzJvdWtrciIsImtleVR5cGUiOiJzZWNyZXQiLCJlbnZpcm9ubWVudElkIjoibzVvcGh1NG03M3ZjMzljbm4zdGMyb3Vra3IifQ.Kpl4mXw0UmcXd_vIvz68OQ0F8DHsYKaqfRwLUccem0c'
+});
 
 serve(async (req) => {
   try {
-    const payload = await req.json()
-    
+    const payload = await req.json();
+
     // We only care about updates to the game table
     if (payload.type === 'UPDATE' && payload.table === 'games') {
       const oldRecord = payload.old_record;
@@ -15,46 +16,40 @@ serve(async (req) => {
 
       // Ensure the turn has actually changed
       if (newRecord.current_turn_id && newRecord.current_turn_id !== oldRecord.current_turn_id) {
-        
         const nextPlayerId = newRecord.current_turn_id;
-        console.log(`Notifying player: ${nextPlayerId} for game ${newRecord.id}...`);
-
-        const base64Auth = btoa(`${PINGRAM_CLIENT_ID}:${PINGRAM_API_KEY}`);
+        const playerPos = nextPlayerId === newRecord.player1_id ? newRecord.player1_pos : newRecord.player2_pos;
         
-        // Let Pingram handle the Push Notification
-        const pingramRes = await fetch(`https://api.notificationapi.com/${PINGRAM_CLIENT_ID}/sender`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${base64Auth}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              notificationId: 'new_turn', // Note: You'll need to create a template named 'new_turn' in Pingram Dashboard!
-              user: {
-                id: nextPlayerId 
-              },
-              mergeTags: {
-                game_id: newRecord.id
-              }
-            })
+        console.log(`Notifying player: ${nextPlayerId} for game ${newRecord.id} at pos ${playerPos}...`);
+
+        // Use Pingram SDK to send the notification
+        await pingram.send({
+          type: 'snake_ladder_push',
+          to: {
+            id: nextPlayerId 
+          },
+          parameters: {
+            "player_pos": String(playerPos),
+            "game_id": newRecord.id
+          },
+          templateId: 'new_turn'
         });
 
-        if (!pingramRes.ok) {
-            const err = await pingramRes.text();
-            console.error("Pingram failed:", err);
-            return new Response(`Pingram Error: ${err}`, { status: 500 });
-        }
-        
         return new Response(JSON.stringify({ success: true, notified: nextPlayerId }), {
-          headers: { "Content-Type": "application/json" },
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
         });
       }
     }
-    
+
     return new Response(JSON.stringify({ msg: "Ignored or no turn change" }), {
       headers: { "Content-Type": "application/json" },
     });
+
   } catch (err) {
-    return new Response(String(err?.message ?? err), { status: 500 })
+    console.error("Pingram failed:", err);
+    return new Response(JSON.stringify({ error: String(err?.message ?? err) }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
-})
+});

@@ -7,6 +7,7 @@ import { music } from '../../../lib/music';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '../../../lib/supabaseClient';
 import { useRouter, useParams } from 'next/navigation';
+import { useNotification } from '@notificationapi/react';
 
 const DiceIcon = ({ value }: { value: number | null }) => {
   if (!value) return <span className="text-3xl sm:text-4xl">🎲</span>;
@@ -23,6 +24,7 @@ export default function GamePage() {
   // ─── State ─────────────────────────────────────────────────────────────────
   const [user, setUser]           = useState<any>(null);
   const [game, setGame]           = useState<any>(null);
+  const { sendNotification }      = useNotification();
   const [player1Pos, setP1Pos]    = useState(0);
   const [player2Pos, setP2Pos]    = useState(0);
   const [diceResult, setDice]     = useState<number | null>(null);
@@ -181,6 +183,21 @@ export default function GamePage() {
       setTimeout(() => music.stop(), 800);
     }
   }, [game?.status, winner]);
+
+  // ─── Push Notifications for Retention ──────────────────────────────────────
+  useEffect(() => {
+    if (!game || !user || winner) return;
+    if (game.status === 'active' && game.current_turn_id === user.id) {
+      sendNotification({
+        notificationId: 'your_turn',
+        templateId: 'your_turn', // Make sure this matches your NotificationAPI dashboard template
+        mergeTags: {
+          game_id: gameId,
+          player_name: user?.user_metadata?.full_name || 'Gladiator',
+        }
+      });
+    }
+  }, [game?.current_turn_id, user?.id, game?.status, winner, sendNotification]);
 
   // ─── Music: intensify when a player enters the final 15% of the board ────
   useEffect(() => {
