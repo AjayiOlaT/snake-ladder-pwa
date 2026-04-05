@@ -6,8 +6,19 @@ import Providers from "./Providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Snake & Ladder - PWA",
-  description: "A real-time, deterministic web3-ready game",
+  title: "Neon Arena: Snake & Ladder",
+  description: "A real-time multiplayer neon snake and ladder battle arena.",
+  manifest: "/manifest.json",
+  themeColor: "#6366f1",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Neon Arena",
+  },
+  icons: {
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({
