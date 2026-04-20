@@ -159,7 +159,8 @@ export default function NumberDuelGame() {
         const { error } = await supabase.from('number_duel_guesses').insert({
             match_id: matchId,
             player_id: user.id,
-            guess: finalGuess
+            guess: finalGuess,
+            feedback: 'pending' // Placeholder for manual transition
         });
 
         if (error) {
@@ -220,8 +221,8 @@ export default function NumberDuelGame() {
     const mySecret = isP1 ? match.p1_secret_number : match.p2_secret_number;
     const isMyTurn = match.current_turn_id === user.id;
     const latestGuess = guesses[0];
-    const awaitingMyResponse = latestGuess && latestGuess.player_id !== user.id && !latestGuess.feedback;
-    const awaitingOpponentResponse = latestGuess && latestGuess.player_id === user.id && !latestGuess.feedback;
+    const awaitingMyResponse = latestGuess && latestGuess.player_id !== user.id && (!latestGuess.feedback || latestGuess.feedback === 'pending');
+    const awaitingOpponentResponse = latestGuess && latestGuess.player_id === user.id && (!latestGuess.feedback || latestGuess.feedback === 'pending');
 
     const remainingCount = (knownMax || 0) - (knownMin || 0) + 1;
     const showGrid = remainingCount <= 10 && remainingCount > 0;
