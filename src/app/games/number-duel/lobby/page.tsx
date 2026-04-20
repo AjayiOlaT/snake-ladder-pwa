@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '../../../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function NumberDuelLobby() {
     const [supabase] = useState(() => createClient());
@@ -13,8 +13,14 @@ export default function NumberDuelLobby() {
     const [isHosting, setIsHosting] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
     const [joinPin, setJoinPin] = useState('');
-    const [difficulty, setDifficulty] = useState('classic');
+    const [isEstablishing, setIsEstablishing] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    
+    // Advanced Settings
+    const [rangeMin, setRangeMin] = useState(1);
+    const [rangeMax, setRangeMax] = useState(100);
+    const [roundsToWin, setRoundsToWin] = useState(3);
+    const [bluffingEnabled, setBluffingEnabled] = useState(false);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -30,33 +36,48 @@ export default function NumberDuelLobby() {
     const handleHostGame = async () => {
         if (!user) return;
         setIsHosting(true);
+        setIsEstablishing(true);
         setErrorMsg('');
         
-        // Initial setup for Number Duel: Pick a random target if needed,
-        // or let the host pick it in the next screen.
+        // Ensure values are numbers
+        const min = parseInt(rangeMin.toString());
+        const max = parseInt(rangeMax.toString());
+
+        // Client-side PIN generation fallback to ensure immediate visibility
+        const generatedPin = Math.random().toString(36).substring(2, 8).toUpperCase();
+
         const { data, error } = await supabase
             .from('number_duel_matches')
             .insert({ 
                 player1_id: user.id,
-                difficulty: difficulty,
-                status: 'waiting'
+                range_min: min,
+                range_max: max,
+                rounds_to_win: roundsToWin,
+                bluffing_enabled: bluffingEnabled,
+                status: 'waiting',
+                phase: 'picking',
+                join_code: generatedPin
             })
             .select()
             .single();
             
-        setIsHosting(false);
-        
         if (error) {
+            setIsHosting(false);
+            setIsEstablishing(false);
             setErrorMsg('Failed to create game. ' + error.message);
             return;
         }
         
-        router.push(`/games/number-duel/${data.id}`);
+        // Small delay to ensure DB sync before routing
+        setTimeout(() => {
+            router.push(`/games/number-duel/${data.id}`);
+        }, 800);
     };
 
     const handleJoinGame = async () => {
         if (!user || !joinPin || joinPin.length < 6) return;
         setIsJoining(true);
+        setIsEstablishing(true);
         setErrorMsg('');
 
         const pin = joinPin.toUpperCase().trim();
@@ -64,9 +85,9 @@ export default function NumberDuelLobby() {
         const { data: gameId, error } = await supabase
             .rpc('nd_join_game', { p_join_code: pin });
 
-        setIsJoining(false);
-
         if (error || !gameId) {
+            setIsJoining(false);
+            setIsEstablishing(false);
             setErrorMsg(
                 error?.message?.includes('own game')
                     ? "You can't join your own game!"
@@ -75,27 +96,56 @@ export default function NumberDuelLobby() {
             return;
         }
 
-        router.push(`/games/number-duel/${gameId}`);
+        setTimeout(() => {
+            router.push(`/games/number-duel/${gameId}`);
+        }, 800);
     };
 
     if (!user) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Command Center...</div>;
 
     return (
        <main className="flex flex-col items-center justify-center min-h-screen relative p-4 bg-slate-950 overflow-hidden">
+          {/* Neural Bridge Overlay */}
+          <AnimatePresence>
+            {isEstablishing && (
+                <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-2xl"
+                >
+                    <div className="relative">
+                        <div className="w-32 h-32 rounded-full border-t-2 border-rose-500 animate-spin" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-24 h-24 rounded-full border-b-2 border-amber-500 animate-spin-slow" />
+                        </div>
+                    </div>
+                    <motion.div 
+                        initial={{ y: 20, opacity: 0 }} 
+                        animate={{ y: 0, opacity: 1 }} 
+                        className="mt-8 text-center"
+                    >
+                        <h2 className="text-2xl font-black italic tracking-tighter text-white mb-2 uppercase">Bridging Neural Connection</h2>
+                        <p className="text-rose-400 font-black text-[10px] tracking-[0.5em] uppercase animate-pulse">Synchronizing Standoff Parameters...</p>
+                    </motion.div>
+                </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Background aesthetics */}
           <div className="fixed inset-0 pointer-events-none z-0">
              <div className="absolute top-[10%] left-[10%] w-[400px] h-[400px] bg-rose-600/20 rounded-full blur-[150px]" />
              <div className="absolute top-[40%] right-[10%] w-[300px] h-[300px] bg-amber-500/20 rounded-full blur-[150px]" />
           </div>
 
-          <div className="z-10 w-full max-w-4xl flex flex-col pt-10 pb-20 px-4 md:px-0">
+          <div className="z-10 w-full max-w-4xl flex flex-col pt-4 pb-12 px-4 md:px-0">
               
               {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-0 mb-8 sm:mb-12">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 mb-6 sm:mb-8">
                   <div>
-                     <h2 className="text-sm sm:text-xl text-rose-400 font-bold tracking-widest uppercase mb-1">Deduction Chamber</h2>
-                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
-                         Number Duel Lobby
+                     <h2 className="text-[10px] sm:text-xs text-rose-400 font-black tracking-[0.3em] uppercase mb-0.5">Deduction Chamber</h2>
+                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 italic tracking-tighter">
+                         NUMBER DUEL
                      </h1>
                   </div>
                   
@@ -116,51 +166,92 @@ export default function NumberDuelLobby() {
               <div className="grid md:grid-cols-2 gap-8">
                   
                   {/* HOST PANEL */}
-                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 md:p-10 flex flex-col shadow-2xl relative overflow-hidden group hover:border-rose-500/50 transition-colors">
+                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-rose-500/50 transition-colors">
                       <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       
                       <div className="relative z-10">
-                        <div className="w-16 h-16 rounded-2xl bg-rose-500/20 flex items-center justify-center text-4xl mb-6 shadow-inner border border-rose-500/30">
+                        <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-rose-500/30">
                             ⚔️
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-2">Host Duel</h2>
-                        <p className="text-slate-400 font-medium mb-8">Initiate a mental standoff. Generate a PIN and wait for a worthy opponent to bridge the gap.</p>
+                        <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Host Duel</h2>
+                        <p className="text-slate-400 font-medium text-[11px] mb-6">Initialize a mental standoff. Configure parameters.</p>
                         
-                        <div className="space-y-4 mb-8">
-                            <label className="text-sm font-bold text-slate-300 uppercase tracking-widest">Select Ruleset</label>
-                            <div className="grid grid-cols-2 gap-3">
-                                {['classic', 'insane'].map((level) => (
-                                    <button 
-                                        key={level}
-                                        onClick={() => setDifficulty(level)}
-                                        className={`py-3 rounded-xl font-bold uppercase tracking-wide text-xs md:text-sm border transition-all ${difficulty === level ? 'bg-rose-500 text-white border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.5)]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
-                                    >
-                                        {level}
-                                    </button>
-                                ))}
+                        <div className="space-y-6 mb-8">
+                            {/* Range Setting */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-end">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Number Range</label>
+                                    <span className="text-rose-400 font-mono font-black">{rangeMin} — {rangeMax}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input 
+                                        type="number" 
+                                        value={rangeMin} 
+                                        onChange={(e) => setRangeMin(parseInt(e.target.value))}
+                                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-center font-mono text-white focus:outline-none focus:border-rose-500/50"
+                                    />
+                                    <input 
+                                        type="number" 
+                                        value={rangeMax} 
+                                        onChange={(e) => setRangeMax(parseInt(e.target.value))}
+                                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-center font-mono text-white focus:outline-none focus:border-rose-500/50"
+                                    />
+                                </div>
                             </div>
+
+                            {/* Rounds Setting */}
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">First to Win (Rounds)</label>
+                                <div className="flex gap-2">
+                                    {[1, 3, 5, 7].map(r => (
+                                        <button 
+                                            key={r}
+                                            onClick={() => setRoundsToWin(r)}
+                                            className={`flex-1 py-2 rounded-xl font-black border transition-all ${roundsToWin === r ? 'bg-rose-500 border-rose-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Bluffing Toggle */}
+                            <button 
+                                onClick={() => setBluffingEnabled(!bluffingEnabled)}
+                                className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between ${bluffingEnabled ? 'bg-amber-500/10 border-amber-500/50' : 'bg-white/5 border-white/10'}`}
+                            >
+                                <div className="text-left">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Bluff Protocol</p>
+                                    <p className={`text-sm font-black ${bluffingEnabled ? 'text-amber-400' : 'text-slate-400'}`}>
+                                        {bluffingEnabled ? 'DECEPTION ENABLED' : 'HONESTY ENFORCED'}
+                                    </p>
+                                </div>
+                                <div className={`w-12 h-6 rounded-full relative transition-colors ${bluffingEnabled ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bluffingEnabled ? 'right-1' : 'left-1'}`} />
+                                </div>
+                            </button>
                         </div>
 
                         <button 
                             onClick={handleHostGame}
-                            disabled={isHosting}
-                            className="w-full py-4 bg-gradient-to-r from-rose-500 to-rose-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center"
+                            disabled={isHosting || isNaN(rangeMin) || isNaN(rangeMax) || rangeMax <= rangeMin}
+                            className="w-full py-4 bg-gradient-to-r from-rose-500 to-rose-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center disabled:opacity-30 disabled:hover:scale-100"
                         >
-                            {isHosting ? <span className="animate-pulse">Initializing Duel...</span> : 'Generate PIN'}
+                            {isHosting ? <span className="animate-pulse">Initializing Duel...</span> : 'Engage Link'}
                         </button>
                       </div>
                   </div>
 
                   {/* JOIN PANEL */}
-                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 md:p-10 flex flex-col shadow-2xl relative overflow-hidden group hover:border-amber-500/50 transition-colors">
+                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-amber-500/50 transition-colors">
                       <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       
                       <div className="relative z-10 flex flex-col h-full">
-                        <div className="w-16 h-16 rounded-2xl bg-amber-500/20 flex items-center justify-center text-4xl mb-6 shadow-inner border border-amber-500/30">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-amber-500/30">
                             🛡️
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-2">Join Duel</h2>
-                        <p className="text-slate-400 font-medium mb-12">Enter a 6-digit Strike PIN to enter an ongoing mental warfare session.</p>
+                        <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Join Duel</h2>
+                        <p className="text-slate-400 font-medium text-[11px] mb-8">Enter a Strike PIN to join a session.</p>
                         
                         <div className="mt-auto space-y-4">
                             <input 

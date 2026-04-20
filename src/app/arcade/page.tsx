@@ -25,7 +25,7 @@ const games = [
         color: 'from-rose-600 to-amber-500',
         icon: '/number-duel-thumb.png',
         path: '/games/number-duel/lobby',
-        status: 'coming-soon'
+        status: 'playable'
     }
 ];
 
