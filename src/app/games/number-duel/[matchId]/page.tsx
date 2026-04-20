@@ -39,23 +39,12 @@ export default function NumberDuelGame() {
             const { data: gData } = await supabase.from('number_duel_guesses').select('*').eq('match_id', matchId).order('created_at', { ascending: false });
             setGuesses(gData || []);
         })();
-
-        const channel = supabase.channel(`nd-${matchId}`)
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'number_duel_matches', filter: `id=eq.${matchId}` }, async (payload) => {
-                // Force a fresh fetch to ensure all columns (like player2_id) are present and trigger the UI transition
-                const { data } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
-                if (data) setMatch(data);
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
-                setGuesses(prev => [payload.new, ...prev]);
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
-                setGuesses(prev => prev.map(g => g.id === payload.new.id ? payload.new : g));
-            })
-            .subscribe();
+    }, [matchId, supabase, router]);
 
     // Robust Polling & Real-time Integration
     useEffect(() => {
+        if (!matchId) return;
+        
         const channel = supabase
             .channel(`number-duel-${matchId}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'number_duel_matches', filter: `id=eq.${matchId}` }, (payload) => {
@@ -63,6 +52,9 @@ export default function NumberDuelGame() {
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
                 setGuesses(prev => [payload.new, ...prev]);
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
+                setGuesses(prev => prev.map(g => g.id === payload.new.id ? payload.new : g));
             })
             .subscribe();
 
