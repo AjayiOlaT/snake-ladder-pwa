@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '../../lib/supabaseClient';
+import { createClient } from '../../../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -34,7 +34,7 @@ export default function LobbyPage() {
        setErrorMsg('');
        
        const { data, error } = await supabase
-           .from('games')
+           .from('snake_ladder_matches')
            .insert({ 
                player1_id: user.id,
                difficulty: difficulty
@@ -50,7 +50,7 @@ export default function LobbyPage() {
        }
        
        // Route to the new game room
-       router.push(`/game/${data.id}`);
+       router.push(`/games/snake-ladder/${data.id}`);
    };
 
    const handleJoinGame = async () => {
@@ -63,7 +63,7 @@ export default function LobbyPage() {
        // Call the SECURITY DEFINER RPC — bypasses the RLS block that prevents
        // Player 2 from updating a row they're not yet a participant of.
        const { data: gameId, error } = await supabase
-           .rpc('join_game', { p_join_code: pin });
+           .rpc('sl_join_game', { p_join_code: pin });
 
        setIsJoining(false);
 
@@ -77,7 +77,7 @@ export default function LobbyPage() {
        }
 
        // Success! Route to the arena — host will press START MATCH
-       router.push(`/game/${gameId}`);
+       router.push(`/games/snake-ladder/${gameId}`);
    };
 
    if (!user) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>;

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import GameBoard, { RAW_CONFIGS } from '../../../components/GameBoard';
-import { sfx } from '../../../lib/audio';
-import { music } from '../../../lib/music';
+import GameBoard, { RAW_CONFIGS } from '../../../../components/GameBoard';
+import { sfx } from '../../../../lib/audio';
+import { music } from '../../../../lib/music';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createClient } from '../../../lib/supabaseClient';
+import { createClient } from '../../../../lib/supabaseClient';
 import { useRouter, useParams } from 'next/navigation';
 
 const DiceIcon = ({ value }: { value: number | null }) => {
@@ -17,7 +17,7 @@ const DiceIcon = ({ value }: { value: number | null }) => {
 export default function GamePage() {
   const router = useRouter();
   const params = useParams();
-  const gameId = params.id as string;
+  const gameId = params.matchId as string;
   const [supabase] = useState(() => createClient());
 
   // ─── State ─────────────────────────────────────────────────────────────────
@@ -70,9 +70,9 @@ export default function GamePage() {
       setUser(session.user);
       userRef.current = session.user;
 
-      const { data, error } = await supabase.from('games').select('*').eq('id', gameId).single();
+      const { data, error } = await supabase.from('snake_ladder_matches').select('*').eq('id', gameId).single();
       if (!mounted) return;
-      if (error || !data) { router.replace('/lobby'); return; }
+      if (error || !data) { router.replace('/games/snake-ladder/lobby'); return; }
       setGame(data);
       setP1Pos(data.player1_pos ?? 0);
       setP2Pos(data.player2_pos ?? 0);
@@ -82,7 +82,7 @@ export default function GamePage() {
     // Always-on polling — safety net for positions + game over
     const poll = setInterval(async () => {
       if (!mounted) return;
-      const { data } = await supabase.from('games').select('*').eq('id', gameId).single();
+      const { data } = await supabase.from('snake_ladder_matches').select('*').eq('id', gameId).single();
       if (!mounted || !data) return;
       setGame(data);
       if (data.status === 'finished' && data.winner_id) setWinner(data.winner_id);
@@ -99,7 +99,7 @@ export default function GamePage() {
     })
       // ── Postgres Realtime (for waiting→active, active→finished) ──────────
       .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}`,
+        event: 'UPDATE', schema: 'public', table: 'snake_ladder_matches', filter: `id=eq.${gameId}`,
       }, (payload) => {
         if (!mounted) return;
         const d = payload.new as any;
@@ -198,12 +198,12 @@ export default function GamePage() {
     const opponentId = u.id === g.player1_id ? g.player2_id : g.player1_id;
     // Broadcast game_over immediately so opponent sees VICTORY instantly
     bc('game_over', { winnerId: opponentId });
-    await supabase.from('games').update({ 
+    await supabase.from('snake_ladder_matches').update({ 
       status: 'finished', 
       winner_id: opponentId,
       surrendered_by: u.id
     }).eq('id', g.id);
-    router.push('/lobby');
+    router.push('/games/snake-ladder/lobby');
   };
 
   // ─── Roll Dice — local animation + simultaneous broadcast to opponent ──────
@@ -249,7 +249,7 @@ export default function GamePage() {
 
     // Saves to DB and triggers Realtime for opponent's postgres_changes handler
     const persist = async (finalPos: number, finished: boolean, evText = lastEvText, evType = lastEvType) => {
-      await supabase.from('games').update({
+      await supabase.from('snake_ladder_matches').update({
         player1_pos:      isP1 ? finalPos : p1Ref.current,
         player2_pos:      isP1 ? p2Ref.current : finalPos,
         current_turn_id:  finished ? g.current_turn_id : (isP1 ? g.player2_id : g.player1_id),
@@ -388,8 +388,8 @@ export default function GamePage() {
                   <div className="flex flex-col sm:flex-row gap-3 w-full justify-center mt-4">
                     {isPlayer1 ? (
                       <>
-                        <button onClick={async () => { await supabase.from('games').update({ status: 'finished' }).eq('id', game.id); router.push('/lobby'); }} className="px-6 py-3 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold uppercase tracking-widest text-xs rounded-xl">Cancel</button>
-                        <button onClick={async () => { await supabase.from('games').update({ status: 'active', current_turn_id: game.player1_id }).eq('id', game.id); }} className="px-6 py-3 border border-teal-500 bg-teal-500 text-slate-900 hover:bg-teal-400 font-extrabold uppercase tracking-widest text-xs rounded-xl shadow-[0_0_30px_rgba(20,184,166,0.6)]">START MATCH 🚀</button>
+                        <button onClick={async () => { await supabase.from('snake_ladder_matches').update({ status: 'finished' }).eq('id', game.id); router.push('/games/snake-ladder/lobby'); }} className="px-6 py-3 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold uppercase tracking-widest text-xs rounded-xl">Cancel</button>
+                        <button onClick={async () => { await supabase.from('snake_ladder_matches').update({ status: 'active', current_turn_id: game.player1_id }).eq('id', game.id); }} className="px-6 py-3 border border-teal-500 bg-teal-500 text-slate-900 hover:bg-teal-400 font-extrabold uppercase tracking-widest text-xs rounded-xl shadow-[0_0_30px_rgba(20,184,166,0.6)]">START MATCH 🚀</button>
                       </>
                     ) : (
                       <div className="flex items-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-xl">
@@ -407,7 +407,7 @@ export default function GamePage() {
                     <p className="text-4xl sm:text-5xl font-mono font-black tracking-[0.3em] text-teal-400">{game.join_code}</p>
                   </div>
                   {isPlayer1 && (
-                    <button onClick={async () => { await supabase.from('games').update({ status: 'finished' }).eq('id', game.id); router.push('/lobby'); }} className="px-8 py-3 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold uppercase tracking-widest text-xs rounded-xl">Cancel Match</button>
+                    <button onClick={async () => { await supabase.from('snake_ladder_matches').update({ status: 'finished' }).eq('id', game.id); router.push('/games/snake-ladder/lobby'); }} className="px-8 py-3 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold uppercase tracking-widest text-xs rounded-xl">Cancel Match</button>
                   )}
                 </>
               )}
@@ -445,7 +445,7 @@ export default function GamePage() {
               <p className="text-indigo-200 text-lg font-medium">
                 {winner === user?.id ? 'You conquered the Neon Ladders!' : 'The opponent claimed victory…'}
               </p>
-              <button onClick={() => router.push('/lobby')} className="mt-4 w-full px-8 py-5 border-2 border-indigo-400 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/40 font-black uppercase tracking-[0.2em] text-base rounded-2xl transition-all">
+              <button onClick={() => router.push('/games/snake-ladder/lobby')} className="mt-4 w-full px-8 py-5 border-2 border-indigo-400 bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/40 font-black uppercase tracking-[0.2em] text-base rounded-2xl transition-all">
                 Return to Lobby
               </button>
             </motion.div>

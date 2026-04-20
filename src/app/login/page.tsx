@@ -13,8 +13,8 @@ export default function LoginPage() {
    useEffect(() => {
       const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
          if (session) {
-             // Redirect authenticated users to the Multiplayer Lobby
-             router.push('/lobby');
+             // Redirect authenticated users to the Arcade Dashboard
+             router.push('/arcade');
          }
       });
       return () => authListener.subscription.unsubscribe();
@@ -64,7 +64,7 @@ export default function LoginPage() {
                   providers={['google']}
                   magicLink={false}
                   showLinks={false}
-                  redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/lobby` : ''}
+                  redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/arcade` : ''}
                />
             </div>
          </div>

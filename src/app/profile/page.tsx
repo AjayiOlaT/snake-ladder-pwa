@@ -21,13 +21,15 @@ export default function ProfilePage() {
          }
          setUser(session.user);
 
-         // Fetch all games involving the user
-         const { data: games, error } = await supabase
-             .from('games')
-             .select('*')
-             .or(`player1_id.eq.${session.user.id},player2_id.eq.${session.user.id}`);
+         // Fetch matches from all game tables
+         const [slMatches, ndMatches] = await Promise.all([
+             supabase.from('snake_ladder_matches').select('*').or(`player1_id.eq.${session.user.id},player2_id.eq.${session.user.id}`),
+             supabase.from('number_duel_matches').select('*').or(`player1_id.eq.${session.user.id},player2_id.eq.${session.user.id}`)
+         ]);
+
+         const games = [...(slMatches.data || []), ...(ndMatches.data || [])];
              
-         if (!error && games) {
+         if (!slMatches.error && !ndMatches.error && games) {
              const active = games.filter(g => g.status !== 'finished').length;
              const finished = games.filter(g => g.status === 'finished');
              const won = finished.filter(g => g.winner_id === session.user.id).length;
@@ -69,8 +71,8 @@ export default function ProfilePage() {
                     <p className="text-slate-400 text-xs sm:text-sm font-medium uppercase tracking-widest mt-1 sm:mt-2 truncate w-[250px] sm:w-auto">{user?.email}</p>
                  </div>
                  
-                 <button onClick={() => router.push('/lobby')} className="text-[10px] sm:text-xs md:text-sm bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold tracking-widest uppercase px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all w-full sm:w-auto mt-2 sm:mt-0">
-                     Back to Lobby
+                 <button onClick={() => router.push('/arcade')} className="text-[10px] sm:text-xs md:text-sm bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold tracking-widest uppercase px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all w-full sm:w-auto mt-2 sm:mt-0">
+                     Back to Arcade
                  </button>
              </div>
 
