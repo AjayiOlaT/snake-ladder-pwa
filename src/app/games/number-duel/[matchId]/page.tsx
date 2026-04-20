@@ -41,11 +41,16 @@ export default function NumberDuelGame() {
         })();
 
         const channel = supabase.channel(`nd-${matchId}`)
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'number_duel_matches', filter: `id=eq.${matchId}` }, (payload) => {
-                setMatch(payload.new);
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'number_duel_matches', filter: `id=eq.${matchId}` }, async (payload) => {
+                // Force a fresh fetch to ensure all columns (like player2_id) are present and trigger the UI transition
+                const { data } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
+                if (data) setMatch(data);
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
                 setGuesses(prev => [payload.new, ...prev]);
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
+                setGuesses(prev => prev.map(g => g.id === payload.new.id ? payload.new : g));
             })
             .subscribe();
 
