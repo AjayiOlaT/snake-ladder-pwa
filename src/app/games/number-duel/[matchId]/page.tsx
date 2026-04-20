@@ -101,11 +101,14 @@ export default function NumberDuelGame() {
         setKnownMax(max);
     }, [guesses, match, user]);
 
+    const [isConfirmingSecret, setIsConfirmingSecret] = useState(false);
+
     const handlePickSecret = async () => {
-        if (!user || !match || !secretPick) return;
+        if (!user || !match || !secretPick || isConfirmingSecret) return;
         const num = parseInt(secretPick);
         if (isNaN(num) || num < match.range_min || num > match.range_max) return;
 
+        setIsConfirmingSecret(true);
         const isP1 = user.id === match.player1_id;
         const update: any = isP1 ? { p1_secret_number: num } : { p2_secret_number: num };
 
@@ -116,8 +119,17 @@ export default function NumberDuelGame() {
         }
 
         const { error } = await supabase.from('number_duel_matches').update(update).eq('id', matchId);
-        if (error) alert(error.message);
-        setSecretPick('');
+        
+        if (error) {
+            alert("Signal transmission failed: " + error.message);
+            setIsConfirmingSecret(false);
+            return;
+        }
+
+        // INSTANT SYNC: Update local state immediately so UI transitions without waiting for polling/realtime
+        setMatch(prev => prev ? { ...prev, ...update } : prev);
+        setIsConfirmingSecret(false);
+        // We don't clear secretPick here because the UI will switch to "Waiting" view anyway
     };
 
     const handleGuess = async (val?: number) => {
@@ -297,14 +309,15 @@ export default function NumberDuelGame() {
                                             type="number" 
                                             value={secretPick} 
                                             onChange={(e) => setSecretPick(e.target.value)}
+                                            disabled={isConfirmingSecret}
                                             className={`w-full bg-black/40 border rounded-2xl py-8 text-center text-6xl font-black transition-all font-mono focus:outline-none ${!isSecretValid && secretPick ? 'border-red-500 text-red-500' : 'border-white/10 text-amber-400 focus:border-rose-500/50'}`}
                                         />
                                         <button 
                                             onClick={handlePickSecret} 
-                                            disabled={!isSecretValid}
-                                            className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white disabled:opacity-20 disabled:hover:bg-white disabled:hover:text-slate-950 transition-all shadow-xl"
+                                            disabled={!isSecretValid || isConfirmingSecret}
+                                            className="w-full py-5 bg-white text-slate-950 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white disabled:opacity-20 disabled:hover:bg-white disabled:hover:text-slate-950 transition-all shadow-xl flex justify-center"
                                         >
-                                            Confirm Secret
+                                            {isConfirmingSecret ? <span className="animate-pulse">Signaling...</span> : 'Confirm Secret'}
                                         </button>
                                     </div>
                                 </>
