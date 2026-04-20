@@ -94,11 +94,20 @@ export default function LobbyPage() {
              
              {/* Header */}
              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-0 mb-8 sm:mb-12">
-                 <div>
-                    <h2 className="text-sm sm:text-xl text-teal-400 font-bold tracking-widest uppercase mb-1">Neon Arena</h2>
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
-                        Multiplayer Lobby
-                    </h1>
+                 <div className="flex flex-col gap-4">
+                    <button 
+                        onClick={() => router.push('/arcade')}
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 hover:text-white transition-colors group"
+                    >
+                        <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span>
+                        Back to Arcade
+                    </button>
+                    <div>
+                        <h2 className="text-sm sm:text-xl text-teal-400 font-bold tracking-widest uppercase mb-1">Neon Arena</h2>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">
+                            Multiplayer Lobby
+                        </h1>
+                    </div>
                  </div>
                  
                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto text-left sm:text-right bg-white/5 sm:bg-transparent p-3 sm:p-0 rounded-2xl sm:rounded-none border sm:border-0 border-white/5">

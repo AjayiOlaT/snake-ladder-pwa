@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '../../lib/supabaseClient';
+import { music } from '../../lib/music';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,6 +34,8 @@ export default function ArcadePage() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [isMuted, setIsMuted] = useState(false);
+    const hasStartedRef = useRef(false);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -42,8 +45,29 @@ export default function ArcadePage() {
                 router.replace('/login');
             }
         });
-        return () => authListener.subscription.unsubscribe();
+
+        // The GlobalAudioController handles cross-page persistence.
+        // We only tell it to start the Hub music when we arrive here.
+        music.setScene('hub');
+
+        return () => {
+            authListener.subscription.unsubscribe();
+            // We NO LONGER call music.stop() here so audio persists through navigation
+        };
     }, [supabase, router]);
+
+    useEffect(() => {
+        if (user) {
+            const sceneId = games[activeIndex].id;
+            music.setScene(sceneId as any);
+        }
+    }, [activeIndex, user]);
+
+    const toggleMute = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newMuted = music.toggleMute();
+        setIsMuted(newMuted);
+    };
 
     if (!user) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Initializing System...</div>;
 
@@ -61,18 +85,25 @@ export default function ArcadePage() {
                 {/* Top Navigation */}
                 <nav className="flex justify-between items-center mb-12">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-black text-xl italic text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-teal-400">
-                            A
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-white/10 flex items-center justify-center backdrop-blur-sm shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+                            <span className="text-xl font-black text-indigo-400">A</span>
                         </div>
-                        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Neural Arcade v2.0</h2>
+                        <h2 className="text-xs font-black tracking-[0.3em] uppercase text-white/60">Neural Arcade V2.0</h2>
                     </div>
-
-                    <div className="flex items-center gap-6">
-                        <div className="hidden md:block text-right">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Operator</p>
-                            <p className="text-xs font-black text-indigo-300">{user?.user_metadata?.full_name || user?.email}</p>
-                        </div>
-                        <button onClick={() => router.push('/profile')} className="w-10 h-10 rounded-full border-2 border-white/20 overflow-hidden hover:border-indigo-400 transition-all">
+                    
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={toggleMute}
+                            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors group"
+                            title={isMuted ? "Unmute Music" : "Mute Music"}
+                        >
+                            {isMuted ? (
+                                <span className="text-lg opacity-60 group-hover:opacity-100">🔇</span>
+                            ) : (
+                                <span className="text-lg opacity-60 group-hover:opacity-100 animate-pulse">🔊</span>
+                            )}
+                        </button>
+                        <button onClick={() => router.push('/profile')} className="w-10 h-10 rounded-full border-2 border-white/10 overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:border-white/30 transition-all cursor-pointer">
                             <img src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.id}`} alt="Profile" />
                         </button>
                     </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./Providers";
+import GlobalAudioController from "../components/GlobalMusicController";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.className} bg-slate-950 text-white min-h-screen antialiased`}>
         <Providers>
+          <GlobalAudioController />
           {children}
         </Providers>
       </body>

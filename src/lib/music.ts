@@ -1,37 +1,70 @@
 /**
  * Procedural music engine — pure Web Audio API, no external files.
- *
- * Normal mode  : 108 BPM, triangle-wave melody, light hi-hat + kick
- * Intense mode : 152 BPM, added harmony layer, sharper filter, louder
- *
- * Uses a look-ahead scheduler (setInterval at 50 ms) so timing is tight.
+ * Supports dynamic switching between scenes (Hub, Neon Arena, Number Duel).
  */
 
-// C-major pentatonic: C4 D4 E4 G4 A4 C5 D5 E5 G5
-const P = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 784.0];
+const SCALES = {
+  major: [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25], // C Major
+  pentatonic: [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 784.0], // C Pentatonic
+  mystic: [261.63, 277.18, 329.63, 349.23, 392.0, 415.3, 493.88, 523.25], // C Phrygian Dominant
+};
 
-// Melody — indices into P, 16-note loop
-const MELODY = [0, 2, 4, 3, 2, 0, 1, 2, 4, 5, 4, 3, 2, 4, 3, 0];
+interface SceneConfig {
+  bpm: number;
+  melody: number[];
+  bass: number[];
+  scale: number[];
+  wave: OscillatorType;
+  lpf: number;
+}
 
-// Bass root notes (one every 4 melody beats) — indices into P shifted down 2 octaves
-const BASS_ROOTS = [0, 2, 4, 2]; // C3 D3 E3 D3
+const SCENES: Record<string, SceneConfig> = {
+  'hub': {
+    bpm: 92,
+    melody: [0, 2, 4, 2, 0, 4, 3, 2, 0, 2, 5, 4, 2, 4, 0, 0],
+    bass: [0, 3, 4, 3],
+    scale: SCALES.major,
+    wave: 'sine',
+    lpf: 1200
+  },
+  'snake-ladder': {
+    bpm: 108, // Base speed
+    melody: [0, 2, 4, 3, 2, 0, 1, 2, 4, 5, 4, 3, 2, 4, 3, 0],
+    bass: [0, 2, 4, 2],
+    scale: SCALES.pentatonic,
+    wave: 'triangle',
+    lpf: 1400
+  },
+  'number-duel': {
+    bpm: 124,
+    melody: [0, 1, 4, 3, 1, 0, 1, 4, 3, 6, 5, 4, 3, 1, 0, 0],
+    bass: [0, 1, 3, 1],
+    scale: SCALES.mystic,
+    wave: 'sawtooth',
+    lpf: 1000
+  }
+};
 
 class MusicEngine {
   private ctx:    AudioContext | null = null;
   private master: GainNode     | null = null;
 
   private _playing  = false;
+  private _muted    = false;
+  private _scene:   keyof typeof SCENES = 'hub';
   private _intense  = false;
   private _noteIdx  = 0;
-  private _schedAt  = 0;          // next unscheduled time in AudioContext seconds
+  private _schedAt  = 0;
   private _ticker:  ReturnType<typeof setInterval> | null = null;
 
-  // ─── Public API ────────────────────────────────────────────────────────────
-
-  play() {
+  async play() {
     if (typeof window === 'undefined') return;
     this._ensureCtx();
-    if (this.ctx!.state === 'suspended') this.ctx!.resume();
+    
+    if (this.ctx!.state === 'suspended') {
+        await this.ctx!.resume();
+    }
+
     if (this._playing) return;
     this._playing = true;
     this._schedAt = this.ctx!.currentTime + 0.05;
@@ -45,135 +78,147 @@ class MusicEngine {
     if (this.master && this.ctx) {
       this.master.gain.cancelScheduledValues(this.ctx.currentTime);
       this.master.gain.setValueAtTime(this.master.gain.value, this.ctx.currentTime);
-      this.master.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.0);
-      // Reset volume silently after fade-out so next play() starts fresh
-      setTimeout(() => { if (this.master) this.master.gain.value = this._masterVol(); }, 1200);
+      this.master.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
     }
   }
+
+  isPlaying() {
+    return this._playing && this.ctx?.state === 'running';
+  }
+
+  setScene(scene: keyof typeof SCENES) {
+    if (this._scene === scene) return;
+    this._scene = scene;
+    // Reset index for clean start if switching
+    this._noteIdx = 0;
+  }
+
+  toggleMute() {
+    this._muted = !this._muted;
+    if (this.master && this.ctx) {
+      const vol = this._muted ? 0 : this._masterVol();
+      this.master.gain.setTargetAtTime(vol, this.ctx.currentTime, 0.1);
+    }
+    return this._muted;
+  }
+
+  isMuted() { return this._muted; }
 
   setIntense(intense: boolean) {
     if (this._intense === intense || !this.ctx || !this.master) return;
     this._intense = intense;
     const target = this._masterVol();
-    this.master.gain.cancelScheduledValues(this.ctx.currentTime);
-    this.master.gain.setValueAtTime(this.master.gain.value, this.ctx.currentTime);
-    this.master.gain.linearRampToValueAtTime(target, this.ctx.currentTime + 2.0);
+    this.master.gain.setTargetAtTime(target, this.ctx.currentTime, 1.0);
   }
-
-  // ─── Internal ──────────────────────────────────────────────────────────────
 
   private _ensureCtx() {
     if (this.ctx) return;
     this.ctx   = new (window.AudioContext || (window as any).webkitAudioContext)();
     this.master = this.ctx.createGain();
-    this.master.gain.value = this._masterVol();
+    this.master.gain.value = this._muted ? 0 : this._masterVol();
     this.master.connect(this.ctx.destination);
   }
 
-  private _masterVol() { return this._intense ? 0.26 : 0.16; }
-  private _beatSec()   { return this._intense ? 60 / 152 : 60 / 108; }
+  private _masterVol() { 
+    if (this._scene === 'hub') return 0.12;
+    return this._intense ? 0.22 : 0.14; 
+  }
+
+  private _getBPM() {
+    const base = SCENES[this._scene].bpm;
+    return this._intense ? base + 40 : base;
+  }
 
   private _tick() {
     if (!this._playing || !this.ctx) return;
-    const horizon = this.ctx.currentTime + 0.15; // schedule 150 ms ahead
+    const horizon = this.ctx.currentTime + 0.15;
+    const config  = SCENES[this._scene];
 
     while (this._schedAt < horizon) {
-      const b    = this._beatSec();
-      const mIdx = this._noteIdx % MELODY.length;
-      const freq = P[MELODY[mIdx]];
-      const t    = this._schedAt;
-
-      // ── Melody note ──────────────────────────────────────────────────────
-      this._tone(freq, t, b * 0.82, 0.13, 'triangle');
-
-      // ── Harmony (5th above) in intense mode ──────────────────────────────
-      if (this._intense)
-        this._tone(freq * 1.5, t, b * 0.82, 0.065, 'triangle');
-
-      // ── Bass every 4 beats ───────────────────────────────────────────────
-      if (mIdx % 4 === 0) {
-        const bassFreq = P[BASS_ROOTS[Math.floor(mIdx / 4) % BASS_ROOTS.length]] / 2;
-        this._bass(bassFreq, t, b * 3.6);
+      if (this._muted) {
+        this._schedAt += (60 / this._getBPM());
+        continue;
       }
 
-      // ── Kick on beats 0 and 8 ────────────────────────────────────────────
-      if (mIdx === 0 || mIdx === 8) this._kick(t);
+      const b    = 60 / this._getBPM();
+      const mIdx = this._noteIdx % config.melody.length;
+      const freq = config.scale[config.melody[mIdx]];
+      const t    = this._schedAt;
 
-      // ── Hi-hat every beat ────────────────────────────────────────────────
-      this._hihat(t);
+      // ── Melody ───────────────────────────────────────────────────────────
+      this._tone(freq, t, b * 0.85, 0.12, config.wave);
 
-      // ── Off-beat hi-hat in intense mode ──────────────────────────────────
-      if (this._intense) this._hihat(t + b * 0.5, 0.025);
+      // ── Harmony (intense or specific duel layer) ─────────────────────────
+      if (this._intense || this._scene === 'number-duel') {
+        const harm = this._scene === 'number-duel' ? 1.25 : 1.5; // perfect 4th or 5th
+        this._tone(freq * harm, t, b * 0.85, 0.05, 'sine');
+      }
+
+      // ── Bass ─────────────────────────────────────────────────────────────
+      if (this._noteIdx % 4 === 0) {
+        const bassIdx = Math.floor(this._noteIdx / 4) % config.bass.length;
+        this._bass(config.scale[config.bass[bassIdx]] / 2, t, b * 3.5);
+      }
+
+      // ── Percussion ───────────────────────────────────────────────────────
+      if (this._noteIdx % 8 === 0) this._kick(t);
+      this._hihat(t, this._scene === 'hub' ? 0.02 : 0.04);
+
+      if (this._intense && (this._noteIdx % 2 === 1)) this._hihat(t, 0.015);
 
       this._noteIdx++;
       this._schedAt += b;
     }
   }
 
-  // ── Synthesis helpers ─────────────────────────────────────────────────────
-
-  private _tone(
-    freq: number, time: number, dur: number,
-    vol: number, type: OscillatorType = 'triangle'
-  ) {
+  private _tone(freq: number, time: number, dur: number, vol: number, type: OscillatorType) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
     const lpf = ctx.createBiquadFilter();
 
-    osc.type           = type;
-    osc.frequency.value = freq;
-    lpf.type           = 'lowpass';
-    lpf.frequency.value = this._intense ? 2400 : 1400;
-    lpf.Q.value         = 0.7;
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, time);
+    lpf.type = 'lowpass';
+    lpf.frequency.setValueAtTime(SCENES[this._scene].lpf, time);
 
     osc.connect(lpf); lpf.connect(env); env.connect(this.master!);
-
     env.gain.setValueAtTime(0, time);
-    env.gain.linearRampToValueAtTime(vol, time + 0.015);
-    env.gain.setValueAtTime(vol * 0.75, time + dur * 0.5);
+    env.gain.linearRampToValueAtTime(vol, time + 0.01);
     env.gain.linearRampToValueAtTime(0, time + dur);
 
     osc.start(time);
-    osc.stop(time + dur + 0.05);
+    osc.stop(time + dur + 0.1);
   }
 
   private _bass(freq: number, time: number, dur: number) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
-
-    osc.type            = 'sine';
-    osc.frequency.value = freq;
-
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, time);
     osc.connect(env); env.connect(this.master!);
-
     env.gain.setValueAtTime(0, time);
-    env.gain.linearRampToValueAtTime(0.18, time + 0.04);
-    env.gain.setValueAtTime(0.09, time + 0.3);
+    env.gain.linearRampToValueAtTime(0.15, time + 0.05);
     env.gain.linearRampToValueAtTime(0, time + dur);
-
     osc.start(time);
-    osc.stop(time + dur + 0.05);
+    osc.stop(time + dur + 0.1);
   }
 
-  private _hihat(time: number, vol = 0.04) {
-    const ctx     = this.ctx!;
-    const frames  = Math.floor(ctx.sampleRate * 0.045);
-    const buf     = ctx.createBuffer(1, frames, ctx.sampleRate);
-    const data    = buf.getChannelData(0);
+  private _hihat(time: number, vol: number) {
+    const ctx = this.ctx!;
+    const frames = Math.floor(ctx.sampleRate * 0.04);
+    const buf = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buf.getChannelData(0);
     for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
-
-    const src    = ctx.createBufferSource();
-    src.buffer   = buf;
-    const hpf    = ctx.createBiquadFilter();
-    hpf.type     = 'highpass';
-    hpf.frequency.value = 8000;
-
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const hpf = ctx.createBiquadFilter();
+    hpf.type = 'highpass';
+    hpf.frequency.setValueAtTime(7000, time);
     const env = ctx.createGain();
     env.gain.setValueAtTime(vol, time);
-    env.gain.linearRampToValueAtTime(0, time + 0.045);
-
+    env.gain.linearRampToValueAtTime(0, time + 0.04);
     src.connect(hpf); hpf.connect(env); env.connect(this.master!);
     src.start(time);
   }
@@ -182,18 +227,15 @@ class MusicEngine {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(160, time);
-    osc.frequency.exponentialRampToValueAtTime(40, time + 0.18);
-
-    env.gain.setValueAtTime(0.55, time);
-    env.gain.exponentialRampToValueAtTime(0.001, time + 0.32);
-
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(0.001, time + 0.2);
+    env.gain.setValueAtTime(0.4, time);
+    env.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
     osc.connect(env); env.connect(this.master!);
     osc.start(time);
-    osc.stop(time + 0.36);
+    osc.stop(time + 0.2);
   }
 }
 
 export const music = new MusicEngine();
+
