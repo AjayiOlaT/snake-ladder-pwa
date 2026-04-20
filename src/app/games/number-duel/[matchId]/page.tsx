@@ -101,6 +101,17 @@ export default function NumberDuelGame() {
         setKnownMax(max);
     }, [guesses, match, user]);
 
+    // Auto-Activator: Move to 'active' if both secrets are present but phase is still 'picking'
+    useEffect(() => {
+        if (match && match.phase === 'picking' && match.p1_secret_number !== null && match.p2_secret_number !== null) {
+            (async () => {
+                // Ensure only one player needs to trigger this update to avoid race conditions
+                // We use the match ID and an idempotent update
+                await supabase.from('number_duel_matches').update({ phase: 'active' }).eq('id', matchId).eq('phase', 'picking');
+            })();
+        }
+    }, [match, matchId, supabase]);
+
     const [isConfirmingSecret, setIsConfirmingSecret] = useState(false);
 
     const handlePickSecret = async () => {
