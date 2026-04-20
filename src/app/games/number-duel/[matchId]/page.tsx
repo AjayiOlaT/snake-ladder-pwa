@@ -416,10 +416,6 @@ export default function NumberDuelGame() {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="relative">
-                                                <input 
-                                                    type="number" 
-                                                    placeholder="--"
                                             <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
