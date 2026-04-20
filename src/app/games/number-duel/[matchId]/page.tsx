@@ -54,10 +54,24 @@ export default function NumberDuelGame() {
             })
             .subscribe();
 
+        // fallback polling if realtime is silent/unconfigured
+        const pollInterval = setInterval(async () => {
+            if (match && !match.player2_id) {
+                const { data } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
+                if (data && data.player2_id) {
+                    setMatch(data);
+                    clearInterval(pollInterval);
+                }
+            } else if (match && match.player2_id) {
+                clearInterval(pollInterval);
+            }
+        }, 2000);
+
         return () => {
             supabase.removeChannel(channel);
+            clearInterval(pollInterval);
         };
-    }, [matchId, supabase, router]);
+    }, [matchId, supabase, router, match?.player2_id]);
 
     // Update Deduction Bounds based on history
     useEffect(() => {
