@@ -54,32 +54,37 @@ export default function NumberDuelGame() {
             })
             .subscribe();
 
-        // fallback polling if realtime is silent/unconfigured
-        const pollInterval = setInterval(async () => {
-            if (match) {
-                // Poll Match State
-                if (!match.player2_id || match.phase === 'picking') {
-                    const { data } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
-                    if (data) setMatch(data);
-                }
+    // Robust Polling & Real-time Integration
+    useEffect(() => {
+        const channel = supabase
+            .channel(`number-duel-${matchId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'number_duel_matches', filter: `id=eq.${matchId}` }, (payload) => {
+                setMatch(payload.new as any);
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'number_duel_guesses', filter: `match_id=eq.${matchId}` }, (payload) => {
+                setGuesses(prev => [payload.new, ...prev]);
+            })
+            .subscribe();
 
-                // Poll Guesses State
-                const { data: gData } = await supabase.from('number_duel_guesses')
-                    .select('*')
-                    .eq('match_id', matchId)
-                    .order('created_at', { ascending: false });
-                
-                if (gData && JSON.stringify(gData) !== JSON.stringify(guesses)) {
-                    setGuesses(gData || []);
-                }
-            }
-        }, 2000);
+        // 🧬 Neural Relay: High-frequency fallback for absolute synchronization
+        const pollInterval = setInterval(async () => {
+            // Only poll if we don't have P2 yet or if we're in a phase that requires sync
+            const { data: mData } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
+            if (mData) setMatch(mData);
+
+            const { data: gData } = await supabase.from('number_duel_guesses')
+                .select('*')
+                .eq('match_id', matchId)
+                .order('created_at', { ascending: false });
+            
+            if (gData) setGuesses(gData);
+        }, 2500);
 
         return () => {
             supabase.removeChannel(channel);
             clearInterval(pollInterval);
         };
-    }, [matchId, supabase, router, match?.player2_id, guesses]);
+    }, [matchId, supabase, router]); // Removed guesses from dependency to prevent interval flickering
 
     // Update Deduction Bounds based on history
     useEffect(() => {
@@ -94,7 +99,6 @@ export default function NumberDuelGame() {
         let min = match.range_min;
         let max = match.range_max;
 
-        // We only track deduction for OUR guesses against their secret
         const myDeductionGuesses = guesses.filter(g => g.player_id === user.id);
         
         myDeductionGuesses.forEach(g => {
@@ -359,7 +363,7 @@ export default function NumberDuelGame() {
                                     <p className="font-black italic text-sm truncate uppercase tracking-tighter">
                                         {awaitingMyResponse ? 'RESPOND NOW!' : 
                                          awaitingOpponentResponse ? 'WAITING FOR SIGNAL' :
-                                         isMyTurn ? 'INITIATE STRIKE' : 'OPPONENT SCANNING'}
+                                         isMyTurn ? 'YOUR TURN' : 'OPPONENT SCANNING'}
                                     </p>
                                 </div>
                                 <div className="p-4 rounded-3xl bg-white/5 border border-white/10">
@@ -381,7 +385,7 @@ export default function NumberDuelGame() {
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         <button onClick={() => handleResponse('higher')} className="py-6 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-xs hover:bg-rose-500/20 transition-all">Higher ↑</button>
-                                        <button onClick={() => handleResponse('correct')} className="py-6 bg-teal-500/20 border border-teal-500/50 rounded-2xl font-black uppercase text-xs text-teal-400 hover:bg-teal-500 hover:text-white transition-all">Correct ✓</button>
+                                        <button onClick={() => handleResponse('correct')} className="py-6 bg-teal-500/20 border border-teal-500/50 rounded-2xl font-black uppercase text-xs text-teal-400 hover:bg-teal-500 hover:text-white transition-all shadow-[0_0_30px_rgba(20,184,166,0.2)]">Match ✓</button>
                                         <button onClick={() => handleResponse('lower')} className="py-6 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-xs hover:bg-rose-500/20 transition-all">Lower ↓</button>
                                     </div>
                                 </div>
@@ -418,16 +422,6 @@ export default function NumberDuelGame() {
                                             </div>
                                         ) : (
                                             <div className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
-                                            <p className="text-xl font-black text-white italic uppercase tracking-tighter">Your Turn</p>
-                                        </div>
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Secret</p>
-                                            <p className="text-xl font-black text-amber-400 font-mono truncate">{mySecret || '?'}</p>
-                                        </div>
-                                    </div>
 
                                     {/* Guess Input */}
                                     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 relative group transition-all">
