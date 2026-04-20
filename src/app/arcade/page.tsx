@@ -12,7 +12,7 @@ const games = [
         subtitle: 'Snake & Ladders',
         description: 'Climb the cosmic ladders and avoid the neon serpents in this high-stakes multiplayer race.',
         color: 'from-indigo-600 to-teal-400',
-        icon: '🎲',
+        icon: '/neon-arena-thumb.png',
         path: '/games/snake-ladder/lobby',
         status: 'playable'
     },
@@ -22,7 +22,7 @@ const games = [
         subtitle: 'The Guessing War',
         description: 'A mental battle of deduction. Pick a number, outsmart your opponent, and guess theirs first.',
         color: 'from-rose-600 to-amber-500',
-        icon: '⚔️',
+        icon: '/number-duel-thumb.png',
         path: '/games/number-duel/lobby',
         status: 'coming-soon'
     }
@@ -50,14 +50,14 @@ export default function ArcadePage() {
     const activeGame = games[activeIndex];
 
     return (
-        <main className="min-h-screen bg-slate-950 text-white selection:bg-indigo-500/30 overflow-hidden relative">
+        <main className="min-h-screen bg-slate-950 text-white selection:bg-indigo-500/30 overflow-y-auto relative">
             {/* Ambient Background */}
             <div className={`fixed inset-0 transition-colors duration-1000 bg-gradient-to-br ${activeGame.id === 'snake-ladder' ? 'from-indigo-950/40 via-slate-950 to-teal-950/40' : 'from-rose-950/40 via-slate-950 to-amber-950/40'}`}>
                 <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[150px] animate-pulse" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-[150px] animate-pulse" />
             </div>
 
-            <div className="relative z-10 container mx-auto h-screen flex flex-col p-6 md:p-12">
+            <div className="relative z-10 container mx-auto min-h-screen flex flex-col p-5 md:p-12">
                 {/* Top Navigation */}
                 <nav className="flex justify-between items-center mb-12">
                     <div className="flex items-center gap-3">
@@ -111,18 +111,18 @@ export default function ArcadePage() {
                                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                                 className="flex flex-col gap-4"
                             >
-                                <div className="flex items-center gap-4">
-                                    <h3 className={`text-[10px] md:text-sm font-black uppercase tracking-[0.4em] text-transparent bg-clip-text bg-gradient-to-r ${activeGame.color}`}>
+                                <div className="flex items-center gap-3">
+                                    <h3 className={`text-[10px] md:text-xs font-black uppercase tracking-[0.4em] text-transparent bg-clip-text bg-gradient-to-r ${activeGame.color}`}>
                                         {activeGame.subtitle}
                                     </h3>
                                     <div className={`h-[1px] flex-1 bg-gradient-to-r ${activeGame.color} opacity-20`} />
                                 </div>
-                                <h1 className="text-5xl md:text-8xl font-black leading-[0.9] group">
+                                <h1 className="text-4xl md:text-7xl font-black leading-[0.9] group">
                                     {activeGame.title.split(' ').map((word, i) => (
                                         <span key={i} className="block group-hover:italic transition-all duration-300">{word}</span>
                                     ))}
                                 </h1>
-                                <p className="text-slate-400 text-base md:text-xl max-w-md font-medium leading-relaxed mt-2 md:mt-4">
+                                <p className="text-slate-400 text-sm md:text-lg max-w-sm font-medium leading-relaxed mt-1 md:mt-4">
                                     {activeGame.description}
                                 </p>
 
@@ -159,10 +159,14 @@ export default function ArcadePage() {
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                                 exit={{ opacity: 0, scale: 1.2, rotate: 10 }}
                                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                                className={`w-64 h-64 md:w-96 md:h-96 rounded-[3rem] bg-gradient-to-br ${activeGame.color} shadow-[0_0_100px_rgba(0,0,0,0.5)] flex items-center justify-center text-9xl relative group`}
+                                className={`w-52 h-52 md:w-80 md:h-80 rounded-[2.5rem] md:rounded-[3rem] bg-gradient-to-br ${activeGame.color} shadow-[0_0_100px_rgba(0,0,0,0.5)] flex items-center justify-center text-9xl relative group`}
                             >
                                 <div className="absolute inset-4 rounded-[2rem] border-2 border-white/20 glass-effect" />
-                                <span className="drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] group-hover:scale-110 transition-transform duration-500">{activeGame.icon}</span>
+                                <img 
+                                    src={activeGame.icon} 
+                                    alt={activeGame.title}
+                                    className="w-4/5 h-4/5 object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] group-hover:scale-110 transition-transform duration-500"
+                                />
                                 
                                 {/* Floating Particles */}
                                 <div className="absolute -top-10 -right-10 w-20 h-20 bg-white/10 rounded-full blur-2xl animate-pulse" />

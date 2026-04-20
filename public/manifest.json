@@ -1,21 +1,21 @@
 {
-  "name": "Neon Arena: Snake & Ladder",
-  "short_name": "Neon Arena",
-  "description": "A high-stakes, real-time multiplayer Snake and Ladder game with a neon futuristic twist.",
-  "start_url": "/",
+  "name": "Neural Arcade",
+  "short_name": "Arcade Hub",
+  "description": "A high-fidelity multi-game arcade platform with a neon futuristic twist.",
+  "start_url": "/arcade",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#6366f1",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
+      "src": "/arcade-hub.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
+      "src": "/arcade-hub.png",
+      "sizes": "192x192",
       "type": "image/png"
     }
   ]
