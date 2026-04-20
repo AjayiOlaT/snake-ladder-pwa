@@ -56,14 +56,22 @@ export default function NumberDuelGame() {
 
         // fallback polling if realtime is silent/unconfigured
         const pollInterval = setInterval(async () => {
-            if (match && !match.player2_id) {
-                const { data } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
-                if (data && data.player2_id) {
-                    setMatch(data);
-                    clearInterval(pollInterval);
+            if (match) {
+                // Poll Match State
+                if (!match.player2_id || match.phase === 'picking') {
+                    const { data } = await supabase.from('number_duel_matches').select('*').eq('id', matchId).single();
+                    if (data) setMatch(data);
                 }
-            } else if (match && match.player2_id) {
-                clearInterval(pollInterval);
+
+                // Poll Guesses State
+                const { data: gData } = await supabase.from('number_duel_guesses')
+                    .select('*')
+                    .eq('match_id', matchId)
+                    .order('created_at', { ascending: false });
+                
+                if (gData && JSON.stringify(gData) !== JSON.stringify(guesses)) {
+                    setGuesses(gData || []);
+                }
             }
         }, 2000);
 
@@ -71,7 +79,7 @@ export default function NumberDuelGame() {
             supabase.removeChannel(channel);
             clearInterval(pollInterval);
         };
-    }, [matchId, supabase, router, match?.player2_id]);
+    }, [matchId, supabase, router, match?.player2_id, guesses]);
 
     // Update Deduction Bounds based on history
     useEffect(() => {
@@ -101,18 +109,16 @@ export default function NumberDuelGame() {
         setKnownMax(max);
     }, [guesses, match, user]);
 
+    const [isConfirmingSecret, setIsConfirmingSecret] = useState(false);
+
     // Auto-Activator: Move to 'active' if both secrets are present but phase is still 'picking'
     useEffect(() => {
         if (match && match.phase === 'picking' && match.p1_secret_number !== null && match.p2_secret_number !== null) {
             (async () => {
-                // Ensure only one player needs to trigger this update to avoid race conditions
-                // We use the match ID and an idempotent update
                 await supabase.from('number_duel_matches').update({ phase: 'active' }).eq('id', matchId).eq('phase', 'picking');
             })();
         }
     }, [match, matchId, supabase]);
-
-    const [isConfirmingSecret, setIsConfirmingSecret] = useState(false);
 
     const handlePickSecret = async () => {
         if (!user || !match || !secretPick || isConfirmingSecret) return;
@@ -150,19 +156,17 @@ export default function NumberDuelGame() {
 
         setIsSubmitting(true);
         
-        // In the new manual response mode, adding a guess doesn't calculate result immediately.
-        // It moves the turn to the opponent who must now RESPOND.
-        await supabase.from('number_duel_guesses').insert({
+        const { error } = await supabase.from('number_duel_guesses').insert({
             match_id: matchId,
             player_id: user.id,
             guess: finalGuess
         });
 
-        // We stay in active phase, but we might want a 'responding' sub-state.
-        // For simplicity, we keep current_turn_id as the person who just guessed, 
-        // but the UI will show the response buttons to the other player.
-        
-        setGuess('');
+        if (error) {
+            alert("Guess transmission failed: " + error.message);
+        } else {
+            setGuess(''); // Clear the input on success
+        }
         setIsSubmitting(false);
     };
 
@@ -416,19 +420,38 @@ export default function NumberDuelGame() {
                                                 <input 
                                                     type="number" 
                                                     placeholder="--"
-                                                    value={guess}
-                                                    onChange={(e) => setGuess(e.target.value)}
-                                                    disabled={!isMyTurn || awaitingOpponentResponse || isSubmitting}
-                                                    className="w-full bg-black/40 border border-white/10 rounded-[2.5rem] py-10 text-center text-8xl font-black font-mono text-rose-500 focus:outline-none focus:border-rose-500 transition-all disabled:opacity-30"
-                                                />
-                                                <button 
-                                                    onClick={() => handleGuess()}
-                                                    disabled={!isMyTurn || awaitingOpponentResponse || isSubmitting || !guess}
-                                                    className="w-full mt-6 py-6 bg-gradient-to-r from-rose-600 to-rose-700 rounded-3xl text-white font-black text-xl tracking-[0.3em] uppercase shadow-[0_10px_40px_rgba(225,29,72,0.4)] disabled:opacity-0 transition-all hover:scale-[1.01] active:scale-[0.99]"
-                                                >
-                                                    STRIKE
-                                                </button>
-                                            </div>
+                                            <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status</p>
+                                            <p className="text-xl font-black text-white italic uppercase tracking-tighter">Your Turn</p>
+                                        </div>
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Secret</p>
+                                            <p className="text-xl font-black text-amber-400 font-mono truncate">{mySecret || '?'}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Guess Input */}
+                                    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 relative group transition-all">
+                                        <input 
+                                            type="number"
+                                            value={guess}
+                                            onChange={(e) => setGuess(e.target.value)}
+                                            placeholder="?"
+                                            className="w-full bg-transparent text-center text-7xl sm:text-8xl font-black text-rose-500 focus:outline-none placeholder:text-rose-500/20 font-mono"
+                                        />
+                                        <div className="absolute top-2 right-4 text-[10px] text-slate-600 font-mono italic">input_buffer</div>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => handleGuess()}
+                                        disabled={isSubmitting || !guess}
+                                        className="w-full py-6 bg-gradient-to-r from-rose-500 to-rose-600 rounded-3xl text-white font-black text-xl md:text-2xl tracking-[0.2em] uppercase shadow-[0_10px_40px_rgba(244,63,94,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-20 transition-all flex justify-center"
+                                    >
+                                        {isSubmitting ? <span className="animate-pulse">Transmitting...</span> : 'Transmit Guess'}
+                                    </button>
+                                </div>
                                         )}
                                     </div>
                                 </>
