@@ -381,6 +381,15 @@ export default function NumberDuelGame() {
                                         <button onClick={() => handleResponse('lower')} className="py-6 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-xs hover:bg-rose-500/20 transition-all">Lower ↓</button>
                                     </div>
                                 </div>
+                            ) : awaitingOpponentResponse ? (
+                                <div className="py-12 space-y-4 text-center">
+                                    <div className="w-24 h-24 mx-auto bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mb-4">
+                                        <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                    <h3 className="text-2xl font-black uppercase tracking-widest text-amber-500">Signal Transmitted</h3>
+                                    <p className="text-slate-400 font-medium">Waiting for opponent to verify your guess: <span className="text-white font-mono font-bold text-xl">{latestGuess?.guess}</span></p>
+                                    <p className="text-[10px] font-black uppercase text-slate-500 animate-pulse mt-4">Do not break neural link</p>
+                                </div>
                             ) : (
                                 <>
                                     {/* Deduction Progress Bar */}
