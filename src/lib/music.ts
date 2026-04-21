@@ -235,6 +235,53 @@ class MusicEngine {
     osc.start(time);
     osc.stop(time + 0.2);
   }
+
+  // ── Standalone SFX ───────────────────────────────────────────────────
+  async _prepareSFX() {
+      if (typeof window === 'undefined') return false;
+      this._ensureCtx();
+      if (this.ctx!.state === 'suspended') await this.ctx!.resume();
+      if (this._muted) return false;
+      return true;
+  }
+
+  async playWinSound() {
+    if (!(await this._prepareSFX())) return;
+    const t = this.ctx!.currentTime;
+    const notes = [261.63, 329.63, 392.0, 523.25];
+    notes.forEach((freq, i) => {
+      this._tone(freq, t + i * 0.15, 0.4, 0.2, 'sawtooth');
+      this._tone(freq * 1.5, t + i * 0.15, 0.4, 0.1, 'sine');
+    });
+  }
+
+  async playHigherSound() {
+    if (!(await this._prepareSFX())) return;
+    const t = this.ctx!.currentTime;
+    const notes = [392.0, 523.25];
+    notes.forEach((freq, i) => {
+      this._tone(freq, t + i * 0.1, 0.2, 0.15, 'square');
+    });
+  }
+
+  async playLowerSound() {
+    if (!(await this._prepareSFX())) return;
+    const t = this.ctx!.currentTime;
+    const notes = [392.0, 261.63];
+    notes.forEach((freq, i) => {
+      this._tone(freq, t + i * 0.1, 0.2, 0.15, 'triangle');
+    });
+  }
+
+  async playMatchSound() {
+    if (!(await this._prepareSFX())) return;
+    const t = this.ctx!.currentTime;
+    const notes = [261.63, 329.63, 392.0];
+    notes.forEach((freq) => {
+      this._tone(freq, t, 0.6, 0.15, 'sine');
+      this._tone(freq * 2, t, 0.6, 0.08, 'triangle');
+    });
+  }
 }
 
 export const music = new MusicEngine();
