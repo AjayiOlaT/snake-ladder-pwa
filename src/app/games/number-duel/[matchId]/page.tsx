@@ -217,9 +217,12 @@ export default function NumberDuelGame() {
         };
 
         if (feedback === 'correct') {
-            const p1WonValue = isP1 ? 0 : 1;
-            const p1NewScore = match.p1_score + (p1WonValue === 1 ? 0 : 1);
-            const p2NewScore = match.p2_score + (p1WonValue === 1 ? 1 : 0);
+            // isP1 = the responder (number owner). The GUESSER wins the point.
+            // If responder is P1, the guesser is P2 → P2 scores.
+            // If responder is P2, the guesser is P1 → P1 scores.
+            const guesserIsP1 = !isP1;
+            const p1NewScore = match.p1_score + (guesserIsP1 ? 1 : 0);
+            const p2NewScore = match.p2_score + (guesserIsP1 ? 0 : 1);
             
             update.p1_score = p1NewScore;
             update.p2_score = p2NewScore;
