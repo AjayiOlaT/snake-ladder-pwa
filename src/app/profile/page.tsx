@@ -11,6 +11,10 @@ export default function ProfilePage() {
     const [supabase] = useState(() => createClient());
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
+    const [myProfile, setMyProfile] = useState<any>(null);
+    const [editingUsername, setEditingUsername] = useState(false);
+    const [usernameInput, setUsernameInput] = useState('');
+    const [savingUsername, setSavingUsername] = useState(false);
     const [slMatches, setSlMatches] = useState<any[]>([]);
     const [ndMatches, setNdMatches] = useState<any[]>([]);
     const [profiles, setProfiles] = useState<Record<string, string>>({});
@@ -23,6 +27,10 @@ export default function ProfilePage() {
             if (!session) { router.replace('/login'); return; }
             setUser(session.user);
             const uid = session.user.id;
+
+            // Fetch own profile
+            const { data: ownProfile } = await supabase.from('profiles').select('*').eq('id', uid).single();
+            setMyProfile(ownProfile);
 
             const [slRes, ndRes] = await Promise.all([
                 supabase.from('snake_ladder_matches').select('*').or(`player1_id.eq.${uid},player2_id.eq.${uid}`).order('created_at', { ascending: false }),
@@ -121,8 +129,18 @@ export default function ProfilePage() {
         return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
 
-    const initials = user?.user_metadata?.full_name
-        ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+    const handleSaveUsername = async () => {
+        if (!usernameInput.trim() || !user) return;
+        setSavingUsername(true);
+        await supabase.from('profiles').upsert({ id: user.id, username: usernameInput.trim(), email: user.email }, { onConflict: 'id' });
+        setMyProfile((p: any) => ({ ...p, username: usernameInput.trim() }));
+        setEditingUsername(false);
+        setUsernameInput('');
+        setSavingUsername(false);
+    };
+
+    const initials = myProfile?.username
+        ? myProfile.username.substring(0, 2).toUpperCase()
         : (user?.email?.[0] || '?').toUpperCase();
 
     if (loading) return (
@@ -158,16 +176,47 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Identity Card */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 border border-white/10 rounded-3xl p-5 flex items-center gap-4">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 border border-white/10 rounded-3xl p-5 flex items-start gap-4">
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-rose-500 flex items-center justify-center text-2xl font-black shrink-0">
                         {initials}
                     </div>
-                    <div className="overflow-hidden">
-                        <h1 className="text-xl font-black italic tracking-tight truncate">{user?.user_metadata?.full_name || 'Player'}</h1>
+                    <div className="flex-1 overflow-hidden">
+                        {editingUsername ? (
+                            <div className="flex items-center gap-2 mb-1">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={usernameInput}
+                                    onChange={e => setUsernameInput(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') handleSaveUsername(); if (e.key === 'Escape') setEditingUsername(false); }}
+                                    placeholder={myProfile?.username || 'Enter username...'}
+                                    className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400 font-mono"
+                                />
+                                <button onClick={handleSaveUsername} disabled={savingUsername || !usernameInput.trim()}
+                                    className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-teal-500 text-white disabled:opacity-40 hover:bg-teal-400 transition-all shrink-0">
+                                    {savingUsername ? '...' : 'Save'}
+                                </button>
+                                <button onClick={() => setEditingUsername(false)}
+                                    className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-white/5 text-slate-500 hover:bg-white/10 transition-all shrink-0">
+                                    Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 mb-1">
+                                <h1 className="text-xl font-black italic tracking-tight truncate">
+                                    {myProfile?.username || user?.email?.split('@')[0] || 'Player'}
+                                </h1>
+                                <button onClick={() => { setEditingUsername(true); setUsernameInput(myProfile?.username || ''); }}
+                                    className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white transition-all shrink-0">
+                                    Edit
+                                </button>
+                            </div>
+                        )}
                         <p className="text-slate-500 text-xs font-medium truncate">{user?.email}</p>
                         <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Member since {formatDate(user?.created_at)}</p>
                     </div>
                 </motion.div>
+
 
                 {/* Game Tabs */}
                 <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10">
