@@ -26,6 +26,7 @@ export default function NumberDuelGame() {
 
     const [isMuted, setIsMuted] = useState(false);
     const [flashColor, setFlashColor] = useState<string | null>(null);
+    const [flashText, setFlashText] = useState<{text: string, color: string} | null>(null);
 
     useEffect(() => { setIsMuted(music.isMuted()); }, []);
 
@@ -92,10 +93,13 @@ export default function NumberDuelGame() {
         
         if (latestFeedback && latestFeedback !== 'pending' && latestFeedback !== prevLatestFeedback.current) {
             prevLatestFeedback.current = latestFeedback;
-            if (latestFeedback === 'higher') { music.playHigherSound(); setFlashColor('shadow-[inset_0_0_100px_rgba(244,63,94,0.15)]'); }
-            if (latestFeedback === 'lower') { music.playLowerSound(); setFlashColor('shadow-[inset_0_0_100px_rgba(59,130,246,0.15)]'); }
-            if (latestFeedback === 'correct') { music.playMatchSound(); setFlashColor('shadow-[inset_0_0_100px_rgba(20,184,166,0.15)]'); }
-            setTimeout(() => setFlashColor(null), 600);
+            if (latestFeedback === 'higher') { music.playHigherSound(); setFlashColor('shadow-[inset_0_0_100px_rgba(244,63,94,0.15)]'); setFlashText({text: 'HIGHER ↑', color: 'text-amber-500'}); }
+            if (latestFeedback === 'lower') { music.playLowerSound(); setFlashColor('shadow-[inset_0_0_100px_rgba(59,130,246,0.15)]'); setFlashText({text: 'LOWER ↓', color: 'text-blue-500'}); }
+            if (latestFeedback === 'correct') { music.playMatchSound(); setFlashColor('shadow-[inset_0_0_100px_rgba(20,184,166,0.15)]'); setFlashText({text: 'MATCH ✓', color: 'text-teal-400'}); }
+            setTimeout(() => {
+                setFlashColor(null);
+                setFlashText(null);
+            }, 1500);
         }
     }, [guesses, match]);
 
@@ -266,6 +270,21 @@ export default function NumberDuelGame() {
                 <div className="absolute top-[20%] left-[20%] w-[300px] h-[300px] bg-rose-600/10 rounded-full blur-[100px]" />
                 <div className="absolute bottom-[20%] right-[20%] w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-[100px]" />
             </div>
+
+            <AnimatePresence>
+                {flashText && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.5, y: 30 }} 
+                        animate={{ opacity: 1, scale: 1, y: 0 }} 
+                        exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
+                        className="fixed inset-0 pointer-events-none flex items-center justify-center z-50 drop-shadow-2xl backdrop-blur-[2px]"
+                    >
+                        <h1 className={`text-6xl md:text-9xl font-black italic tracking-tighter uppercase tabular-nums drop-shadow-[0_0_50px_rgba(0,0,0,0.8)] ${flashText.color}`}>
+                            {flashText.text}
+                        </h1>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <button onClick={toggleMute} className="fixed top-4 right-4 z-50 bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-md transition-all text-xl border border-white/10">
                 {isMuted ? '🔇' : '🔊'}
