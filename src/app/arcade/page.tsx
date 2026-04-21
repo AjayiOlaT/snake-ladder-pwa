@@ -38,6 +38,8 @@ export default function ArcadePage() {
     const hasStartedRef = useRef(false);
     const [pendingInvites, setPendingInvites] = useState<any[]>([]);
     const [dismissedInvite, setDismissedInvite] = useState<string | null>(null);
+    const [hasUsername, setHasUsername] = useState(true); // optimistic
+    const [dismissedUsernameBanner, setDismissedUsernameBanner] = useState(false);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -70,6 +72,11 @@ export default function ArcadePage() {
             setPendingInvites(data || []);
         };
         fetchInvites();
+
+        // Check if the user has set a username
+        supabase.from('profiles').select('username').eq('id', user.id).single().then(({ data }) => {
+            setHasUsername(!!data?.username);
+        });
 
         const channel = supabase
             .channel('invites-' + user.id)
@@ -137,6 +144,23 @@ export default function ArcadePage() {
                         </button>
                     </div>
                 </nav>
+
+                {/* Username Nudge Banner */}
+                <AnimatePresence>
+                    {!hasUsername && !dismissedUsernameBanner && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            className="mb-4 p-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-amber-400 font-black text-xs uppercase tracking-widest">👋 Set Your Username</p>
+                                <p className="text-slate-400 text-xs font-medium mt-0.5">Pick a name so friends can find and challenge you.</p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                                <button onClick={() => router.push('/friends')} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all">Set Name</button>
+                                <button onClick={() => setDismissedUsernameBanner(true)} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-white/5 text-slate-500 hover:bg-white/10 transition-all">Later</button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Game Invites Banner */}
                 <AnimatePresence>
