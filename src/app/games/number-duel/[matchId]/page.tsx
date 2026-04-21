@@ -140,7 +140,7 @@ export default function NumberDuelGame() {
         }
 
         // INSTANT SYNC: Update local state immediately so UI transitions without waiting for polling/realtime
-        setMatch(prev => prev ? { ...prev, ...update } : prev);
+        setMatch((prev: any) => prev ? { ...prev, ...update } : prev);
         setIsConfirmingSecret(false);
         // We don't clear secretPick here because the UI will switch to "Waiting" view anyway
     };
