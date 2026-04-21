@@ -149,7 +149,12 @@ export default function ProfilePage() {
                     <button onClick={() => router.push('/arcade')} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-1">
                         ← Arcade
                     </button>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Your Profile</p>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => router.push('/friends')} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-1">
+                            👥 Friends
+                        </button>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Your Profile</p>
+                    </div>
                 </div>
 
                 {/* Identity Card */}

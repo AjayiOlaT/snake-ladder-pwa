@@ -19,6 +19,8 @@ export default function NumberDuelGame() {
     const [secretPick, setSecretPick] = useState('');
     const [guesses, setGuesses] = useState<any[]>([]);
     const [selectedGridNumber, setSelectedGridNumber] = useState<number | null>(null);
+    const [acceptedFriends, setAcceptedFriends] = useState<any[]>([]);
+    const [inviteSent, setInviteSent] = useState<string | null>(null);
 
     // Deduction State
     const [knownMin, setKnownMin] = useState<number | null>(null);
@@ -43,6 +45,19 @@ export default function NumberDuelGame() {
             setMatch(data);
             setKnownMin(data.range_min);
             setKnownMax(data.range_max);
+
+            // Load accepted friends for invite panel
+            const { data: friendships } = await supabase
+                .from('friendships')
+                .select('*')
+                .or(`sender_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`)
+                .eq('status', 'accepted');
+
+            if (friendships && friendships.length > 0) {
+                const friendIds = friendships.map((f: any) => f.sender_id === session.user.id ? f.receiver_id : f.sender_id);
+                const { data: profiles } = await supabase.from('profiles').select('id, username, email').in('id', friendIds);
+                setAcceptedFriends(profiles || []);
+            }
 
             const { data: gData } = await supabase.from('number_duel_guesses').select('*').eq('match_id', matchId).order('created_at', { ascending: false });
             setGuesses(gData || []);
@@ -330,6 +345,36 @@ export default function NumberDuelGame() {
                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Room Code</p>
                                 <p className="text-3xl sm:text-4xl font-black tracking-widest text-white font-mono">{match.join_code}</p>
                             </div>
+
+                            {/* Invite a Friend */}
+                            {acceptedFriends.length > 0 && (
+                                <div className="w-full space-y-2 mb-4">
+                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Invite a Friend</p>
+                                    {acceptedFriends.map(friend => (
+                                        <div key={friend.id} className="flex items-center justify-between p-2 px-3 rounded-xl bg-white/5 border border-white/10">
+                                            <span className="text-sm font-bold truncate">{friend.username || friend.email || 'Unknown'}</span>
+                                            {inviteSent === friend.id ? (
+                                                <span className="text-[9px] font-black uppercase text-teal-400 px-3 py-1 rounded-full bg-teal-500/10">Invited ✓</span>
+                                            ) : (
+                                                <button
+                                                    onClick={async () => {
+                                                        await supabase.from('game_invites').insert({
+                                                            sender_id: user.id,
+                                                            receiver_id: friend.id,
+                                                            game_type: 'number-duel',
+                                                            join_code: match.join_code,
+                                                        });
+                                                        setInviteSent(friend.id);
+                                                    }}
+                                                    className="text-[9px] font-black uppercase px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shrink-0"
+                                                >
+                                                    Invite
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className="flex items-center gap-2 text-slate-500">
                                 <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />

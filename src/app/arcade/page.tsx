@@ -36,6 +36,8 @@ export default function ArcadePage() {
     const [activeIndex, setActiveIndex] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const hasStartedRef = useRef(false);
+    const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+    const [dismissedInvite, setDismissedInvite] = useState<string | null>(null);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -52,9 +54,30 @@ export default function ArcadePage() {
 
         return () => {
             authListener.subscription.unsubscribe();
-            // We NO LONGER call music.stop() here so audio persists through navigation
         };
     }, [supabase, router]);
+
+    // Load pending game invites
+    useEffect(() => {
+        if (!user) return;
+        const fetchInvites = async () => {
+            const { data } = await supabase
+                .from('game_invites')
+                .select('*')
+                .eq('receiver_id', user.id)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+            setPendingInvites(data || []);
+        };
+        fetchInvites();
+
+        const channel = supabase
+            .channel('invites-' + user.id)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_invites', filter: `receiver_id=eq.${user.id}` }, () => fetchInvites())
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [user, supabase]);
 
     useEffect(() => {
         if (user) {
@@ -103,13 +126,36 @@ export default function ArcadePage() {
                                 <span className="text-lg opacity-60 group-hover:opacity-100 animate-pulse">🔊</span>
                             )}
                         </button>
+                        <button onClick={() => router.push('/friends')} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors relative" title="Friends">
+                            <span className="text-lg opacity-60 hover:opacity-100">👥</span>
+                            {pendingInvites.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] font-black flex items-center justify-center">{pendingInvites.length}</span>
+                            )}
+                        </button>
                         <button onClick={() => router.push('/profile')} className="w-10 h-10 rounded-full border-2 border-white/10 overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:border-white/30 transition-all cursor-pointer">
                             <img src={user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.id}`} alt="Profile" />
                         </button>
                     </div>
                 </nav>
 
-                {/* Main Content: Game Selector */}
+                {/* Game Invites Banner */}
+                <AnimatePresence>
+                    {pendingInvites.filter(inv => inv.id !== dismissedInvite).map(inv => (
+                        <motion.div key={inv.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            className="mb-4 p-3 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-purple-300 font-black text-xs uppercase tracking-widest">⚔️ Game Invite</p>
+                                <p className="text-slate-300 text-xs font-medium mt-0.5">
+                                    Someone challenged you! Join code: <span className="font-black font-mono text-white">{inv.join_code}</span>
+                                </p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                                <button onClick={() => { router.push(`/games/${inv.game_type}/lobby`); }} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-purple-500 text-white hover:bg-purple-400 transition-all">Join</button>
+                                <button onClick={async () => { setDismissedInvite(inv.id); await supabase.from('game_invites').update({ status: 'dismissed' }).eq('id', inv.id); }} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-white/5 text-slate-500 hover:bg-white/10 transition-all">Dismiss</button>
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
                 <div className="flex-1 flex flex-col md:flex-row items-center gap-12">
                     {/* Left Side: Game Visual & Selection */}
                     <div className="w-full md:w-1/2 flex flex-col gap-6 order-2 md:order-1">
