@@ -208,7 +208,7 @@ export default function NumberDuelGame() {
         setIsSubmitting(true);
         
         await supabase.from('number_duel_guesses')
-            .update({ feedback, is_bluff: false })
+            .update({ feedback })
             .eq('id', latestGuess.id);
 
         const isP1 = user.id === match.player1_id;
@@ -310,14 +310,6 @@ export default function NumberDuelGame() {
                                 <span className="text-xl font-black text-slate-400">{isP1 ? match.p2_score : match.p1_score}</span>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                {match.bluffing_enabled && match.player2_id && (
-                    <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center">
-                        <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest animate-pulse">
-                            ⚠️ Bluffing Enabled: Opponent may lie
-                        </p>
                     </div>
                 )}
 

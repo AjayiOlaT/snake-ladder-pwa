@@ -20,7 +20,6 @@ export default function NumberDuelLobby() {
     const [rangeMin, setRangeMin] = useState(1);
     const [rangeMax, setRangeMax] = useState(100);
     const [roundsToWin, setRoundsToWin] = useState(3);
-    const [bluffingEnabled, setBluffingEnabled] = useState(false);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -53,7 +52,6 @@ export default function NumberDuelLobby() {
                 range_min: min,
                 range_max: max,
                 rounds_to_win: roundsToWin,
-                bluffing_enabled: bluffingEnabled,
                 status: 'waiting',
                 phase: 'picking',
                 join_code: generatedPin
@@ -214,22 +212,6 @@ export default function NumberDuelLobby() {
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Bluffing Toggle */}
-                            <button 
-                                onClick={() => setBluffingEnabled(!bluffingEnabled)}
-                                className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between ${bluffingEnabled ? 'bg-amber-500/10 border-amber-500/50' : 'bg-white/5 border-white/10'}`}
-                            >
-                                <div className="text-left">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Bluff Protocol</p>
-                                    <p className={`text-sm font-black ${bluffingEnabled ? 'text-amber-400' : 'text-slate-400'}`}>
-                                        {bluffingEnabled ? 'DECEPTION ENABLED' : 'HONESTY ENFORCED'}
-                                    </p>
-                                </div>
-                                <div className={`w-12 h-6 rounded-full relative transition-colors ${bluffingEnabled ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bluffingEnabled ? 'right-1' : 'left-1'}`} />
-                                </div>
-                            </button>
                         </div>
 
                         <button 
