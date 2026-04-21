@@ -38,7 +38,8 @@ export default function ArcadePage() {
     const hasStartedRef = useRef(false);
     const [pendingInvites, setPendingInvites] = useState<any[]>([]);
     const [dismissedInvite, setDismissedInvite] = useState<string | null>(null);
-    const [hasUsername, setHasUsername] = useState(true); // optimistic
+    const [senderProfiles, setSenderProfiles] = useState<Record<string, string>>({});
+    const [hasUsername, setHasUsername] = useState(true);
     const [dismissedUsernameBanner, setDismissedUsernameBanner] = useState(false);
 
     useEffect(() => {
@@ -70,6 +71,15 @@ export default function ArcadePage() {
                 .eq('status', 'pending')
                 .order('created_at', { ascending: false });
             setPendingInvites(data || []);
+
+            // Fetch sender usernames
+            if (data && data.length > 0) {
+                const senderIds = [...new Set(data.map((inv: any) => inv.sender_id))];
+                const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', senderIds);
+                const map: Record<string, string> = {};
+                (profiles || []).forEach((p: any) => { map[p.id] = p.username || 'A friend'; });
+                setSenderProfiles(map);
+            }
         };
         fetchInvites();
 
@@ -170,7 +180,7 @@ export default function ArcadePage() {
                             <div>
                                 <p className="text-purple-300 font-black text-xs uppercase tracking-widest">⚔️ Game Invite</p>
                                 <p className="text-slate-300 text-xs font-medium mt-0.5">
-                                    Someone challenged you! Join code: <span className="font-black font-mono text-white">{inv.join_code}</span>
+                                    <span className="text-white font-black">{senderProfiles[inv.sender_id] || 'A friend'}</span> challenged you! Code: <span className="font-black font-mono text-white">{inv.join_code}</span>
                                 </p>
                             </div>
                             <div className="flex gap-2 shrink-0">

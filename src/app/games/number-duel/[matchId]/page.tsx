@@ -21,6 +21,8 @@ export default function NumberDuelGame() {
     const [selectedGridNumber, setSelectedGridNumber] = useState<number | null>(null);
     const [acceptedFriends, setAcceptedFriends] = useState<any[]>([]);
     const [inviteSent, setInviteSent] = useState<string | null>(null);
+    const [opponentProfile, setOpponentProfile] = useState<any>(null);
+    const [myProfile, setMyProfile] = useState<any>(null);
 
     // Deduction State
     const [knownMin, setKnownMin] = useState<number | null>(null);
@@ -45,6 +47,17 @@ export default function NumberDuelGame() {
             setMatch(data);
             setKnownMin(data.range_min);
             setKnownMax(data.range_max);
+
+            // Fetch both player profiles for display names
+            const oppId = data.player1_id === session.user.id ? data.player2_id : data.player1_id;
+            const playerIds = [session.user.id, oppId].filter(Boolean);
+            const { data: profileRows } = await supabase.from('profiles').select('id, username, email').in('id', playerIds);
+            if (profileRows) {
+                const me = profileRows.find((p: any) => p.id === session.user.id);
+                const opp = profileRows.find((p: any) => p.id === oppId);
+                if (me) setMyProfile(me);
+                if (opp) setOpponentProfile(opp);
+            }
 
             // Load accepted friends for invite panel
             const { data: friendships } = await supabase
@@ -319,12 +332,12 @@ export default function NumberDuelGame() {
                         </div>
                         <div className="flex gap-3">
                             <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-bold text-slate-500 uppercase">You</span>
+                                <span className="text-[9px] font-bold text-slate-500 uppercase truncate max-w-[70px]">{myProfile?.username || 'You'}</span>
                                 <span className="text-xl font-black text-rose-400">{isP1 ? match.p1_score : match.p2_score}</span>
                             </div>
                             <div className="w-px h-5 bg-white/10 self-center" />
                             <div className="flex flex-col items-start">
-                                <span className="text-[9px] font-bold text-slate-500 uppercase">Opp</span>
+                                <span className="text-[9px] font-bold text-slate-500 uppercase truncate max-w-[70px]">{opponentProfile?.username || 'Opp'}</span>
                                 <span className="text-xl font-black text-slate-400">{isP1 ? match.p2_score : match.p1_score}</span>
                             </div>
                         </div>
