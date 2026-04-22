@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '../../../../lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
 
 export default function NumberDuelLobby() {
     return (
@@ -30,6 +30,7 @@ function LobbyContent() {
     const [rangeMin, setRangeMin] = useState(1);
     const [rangeMax, setRangeMax] = useState(100);
     const [roundsToWin, setRoundsToWin] = useState(3);
+    const hasAutoChallenged = useRef(false);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -49,7 +50,17 @@ function LobbyContent() {
         return () => authListener.subscription.unsubscribe();
     }, [supabase, router, searchParams]);
 
-    const handleHostGame = async () => {
+    useEffect(() => {
+        if (!user || hasAutoChallenged.current) return;
+        
+        const challengeId = searchParams.get('challengeId');
+        if (challengeId) {
+            hasAutoChallenged.current = true;
+            handleHostGame(challengeId);
+        }
+    }, [user, searchParams]);
+
+    const handleHostGame = async (autoInviteId?: string) => {
         if (!user) return;
         setIsHosting(true);
         setIsEstablishing(true);
@@ -81,6 +92,15 @@ function LobbyContent() {
             setIsEstablishing(false);
             setErrorMsg('Failed to create game. ' + error.message);
             return;
+        }
+
+        if (autoInviteId) {
+            await supabase.from('game_invites').insert({
+                sender_id: user.id,
+                receiver_id: autoInviteId,
+                game_type: 'number-duel',
+                join_code: data.join_code,
+            });
         }
         
         // Small delay to ensure DB sync before routing

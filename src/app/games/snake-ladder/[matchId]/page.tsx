@@ -30,6 +30,8 @@ export default function GamePage() {
   const [winner, setWinner]       = useState<string | null>(null);
   const [announcement, setAnn]    = useState<{ text: string; type: 'roll' | 'ladder' | 'snake' } | null>(null);
   const [showSurrender, setShowSurrender] = useState(false);
+  const [acceptedFriends, setAcceptedFriends] = useState<any[]>([]);
+  const [inviteSent, setInviteSent] = useState<string | null>(null);
 
   // ─── Refs (survive stale closures, safe in Realtime callbacks) ─────────────
   const channelRef        = useRef<any>(null);   // Supabase channel (for Broadcast)
@@ -181,6 +183,25 @@ export default function GamePage() {
       setTimeout(() => music.stop(), 800);
     }
   }, [game?.status, winner]);
+
+  // ─── Fetch Friends for Invites ───────────────────────────────────────────
+  useEffect(() => {
+    if (!user || !game || game.player1_id !== user.id || game.player2_id) return;
+    
+    (async () => {
+      const { data: friendships } = await supabase
+        .from('friendships')
+        .select('*')
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      if (friendships && friendships.length > 0) {
+        const friendIds = friendships.map((f: any) => f.sender_id === user.id ? f.receiver_id : f.sender_id);
+        const { data: profiles } = await supabase.from('profiles').select('id, username, email').in('id', friendIds);
+        setAcceptedFriends(profiles || []);
+      }
+    })();
+  }, [user, game, supabase]);
 
   // ─── Music: intensify when a player enters the final 15% of the board ────
   useEffect(() => {
@@ -406,6 +427,39 @@ export default function GamePage() {
                   <div className="bg-black/50 border border-white/10 px-8 py-5 rounded-2xl w-full flex justify-center">
                     <p className="text-4xl sm:text-5xl font-mono font-black tracking-[0.3em] text-teal-400">{game.join_code}</p>
                   </div>
+                  
+                  {/* Invite a Friend */}
+                  {isPlayer1 && acceptedFriends.length > 0 && (
+                    <div className="w-full space-y-2 text-left">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-2">Invite a Friend</p>
+                      <div className="max-h-32 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                        {acceptedFriends.map(friend => (
+                          <div key={friend.id} className="flex items-center justify-between p-2 px-3 rounded-xl bg-white/5 border border-white/10">
+                            <span className="text-[11px] font-bold truncate text-slate-300">{friend.username || friend.email || 'Unknown'}</span>
+                            {inviteSent === friend.id ? (
+                              <span className="text-[9px] font-black uppercase text-teal-400 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20">Sent ✓</span>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  await supabase.from('game_invites').insert({
+                                    sender_id: user.id,
+                                    receiver_id: friend.id,
+                                    game_type: 'snake-ladder',
+                                    join_code: game.join_code,
+                                  });
+                                  setInviteSent(friend.id);
+                                }}
+                                className="text-[9px] font-black uppercase px-3 py-1 rounded-full bg-teal-500/20 text-teal-400 hover:bg-teal-500 hover:text-white transition-all shrink-0"
+                              >
+                                Invite
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {isPlayer1 && (
                     <button onClick={async () => { await supabase.from('snake_ladder_matches').update({ status: 'finished' }).eq('id', game.id); router.push('/games/snake-ladder/lobby'); }} className="px-8 py-3 border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold uppercase tracking-widest text-xs rounded-xl">Cancel Match</button>
                   )}

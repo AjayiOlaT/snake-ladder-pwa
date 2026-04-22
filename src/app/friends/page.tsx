@@ -31,6 +31,7 @@ export default function FriendsPage() {
 
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [activeSection, setActiveSection] = useState<'friends' | 'requests'>('friends');
+    const [challengingFriend, setChallengingFriend] = useState<any>(null);
 
     const loadData = useCallback(async (uid: string) => {
         const { data } = await supabase.from('friendships').select('*').or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
@@ -305,7 +306,7 @@ export default function FriendsPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <button onClick={() => router.push('/arcade')}
+                                        <button onClick={() => setChallengingFriend(f.other)}
                                             className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white transition-all">
                                             Challenge
                                         </button>
@@ -378,6 +379,69 @@ export default function FriendsPage() {
 
                 <div className="h-8" />
             </div>
+
+            <AnimatePresence>
+                {challengingFriend && (
+                    <ChallengeModal 
+                        friend={challengingFriend} 
+                        onClose={() => setChallengingFriend(null)} 
+                        onSelect={(game) => {
+                            router.push(`/games/${game}/lobby?challengeId=${challengingFriend.id}`);
+                            setChallengingFriend(null);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </main>
+    );
+}
+
+function ChallengeModal({ friend, onClose, onSelect }: { friend: any, onClose: () => void, onSelect: (game: 'number-duel' | 'snake-ladder') => void }) {
+    return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-xl">
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm bg-white/5 border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                    <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors text-xl font-black">×</button>
+                </div>
+                
+                <div className="text-center space-y-6">
+                    <div className="space-y-2">
+                        <p className="text-rose-500 font-black text-[10px] uppercase tracking-[0.3em]">Neural Challenge</p>
+                        <h3 className="text-2xl font-black italic tracking-tighter">SELECT ARENA</h3>
+                        <p className="text-slate-500 text-xs font-medium">Choose a game to challenge <span className="text-white font-bold">{friend.username}</span></p>
+                    </div>
+
+                    <div className="grid gap-3">
+                        <button 
+                            onClick={() => onSelect('number-duel')}
+                            className="group relative w-full p-4 rounded-2xl bg-gradient-to-r from-rose-500/20 to-amber-500/20 border border-rose-500/30 hover:border-rose-500 transition-all text-left overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-amber-500 opacity-0 group-hover:opacity-10 transition-opacity" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p className="font-black text-sm text-white">Number Duel</p>
+                                    <p className="text-[9px] text-rose-400 font-bold uppercase tracking-widest mt-0.5">Deduction Chamber</p>
+                                </div>
+                                <span className="text-2xl">⚔️</span>
+                            </div>
+                        </button>
+
+                        <button 
+                            onClick={() => onSelect('snake-ladder')}
+                            className="group relative w-full p-4 rounded-2xl bg-gradient-to-r from-indigo-500/20 to-teal-500/20 border border-indigo-500/30 hover:border-indigo-500 transition-all text-left overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p className="font-black text-sm text-white">Snake & Ladders</p>
+                                    <p className="text-[9px] text-teal-400 font-bold uppercase tracking-widest mt-0.5">Neon Arena</p>
+                                </div>
+                                <span className="text-2xl">🛡️</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </motion.div>
+        </motion.div>
     );
 }

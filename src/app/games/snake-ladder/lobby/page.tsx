@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '../../../../lib/supabaseClient';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRef } from 'react';
 
 export default function LobbyPage() {
    const [supabase] = useState(() => createClient());
@@ -15,6 +16,8 @@ export default function LobbyPage() {
    const [joinPin, setJoinPin] = useState('');
    const [difficulty, setDifficulty] = useState('easy');
    const [errorMsg, setErrorMsg] = useState('');
+   const searchParams = useSearchParams();
+   const hasAutoChallenged = useRef(false);
 
    useEffect(() => {
       // Listen dynamically for the session to prevent race conditions during OAuth redirect callbacks
@@ -25,10 +28,25 @@ export default function LobbyPage() {
             router.replace('/login');
          }
       });
-      return () => authListener.subscription.unsubscribe();
-   }, [supabase, router]);
 
-   const handleHostGame = async () => {
+      // Auto-fill code from URL if present
+      const code = searchParams.get('code');
+      if (code) setJoinPin(code.toUpperCase());
+
+      return () => authListener.subscription.unsubscribe();
+   }, [supabase, router, searchParams]);
+
+   useEffect(() => {
+       if (!user || hasAutoChallenged.current) return;
+       
+       const challengeId = searchParams.get('challengeId');
+       if (challengeId) {
+           hasAutoChallenged.current = true;
+           handleHostGame(challengeId);
+       }
+   }, [user, searchParams]);
+
+   const handleHostGame = async (autoInviteId?: string) => {
        if (!user) return;
        setIsHosting(true);
        setErrorMsg('');
@@ -42,12 +60,22 @@ export default function LobbyPage() {
            .select()
            .single();
            
-       setIsHosting(false);
-       
        if (error) {
            setErrorMsg('Failed to create game. ' + error.message);
+           setIsHosting(false);
            return;
        }
+
+       if (autoInviteId) {
+           await supabase.from('game_invites').insert({
+               sender_id: user.id,
+               receiver_id: autoInviteId,
+               game_type: 'snake-ladder',
+               join_code: data.join_code,
+           });
+       }
+       
+       setIsHosting(false);
        
        // Route to the new game room
        router.push(`/games/snake-ladder/${data.id}`);
