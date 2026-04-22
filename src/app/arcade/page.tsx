@@ -41,6 +41,7 @@ export default function ArcadePage() {
     const [senderProfiles, setSenderProfiles] = useState<Record<string, string>>({});
     const [hasUsername, setHasUsername] = useState(true);
     const [dismissedUsernameBanner, setDismissedUsernameBanner] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -180,11 +181,25 @@ export default function ArcadePage() {
                             <div>
                                 <p className="text-purple-300 font-black text-xs uppercase tracking-widest">⚔️ Game Invite</p>
                                 <p className="text-slate-300 text-xs font-medium mt-0.5">
-                                    <span className="text-white font-black">{senderProfiles[inv.sender_id] || 'A friend'}</span> challenged you! Code: <span className="font-black font-mono text-white">{inv.join_code}</span>
+                                    <span className="text-white font-black">{senderProfiles[inv.sender_id] || 'A friend'}</span> challenged you! Code: 
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(inv.join_code);
+                                            setCopiedId(inv.id);
+                                            setTimeout(() => setCopiedId(null), 2000);
+                                        }}
+                                        className="ml-1 px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 transition-all font-black font-mono text-white relative group"
+                                        title="Click to copy"
+                                    >
+                                        {inv.join_code}
+                                        {copiedId === inv.id && (
+                                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-1 bg-teal-500 text-white text-[8px] font-black rounded uppercase tracking-widest shadow-lg">Copied!</span>
+                                        )}
+                                    </button>
                                 </p>
                             </div>
                             <div className="flex gap-2 shrink-0">
-                                <button onClick={() => { router.push(`/games/${inv.game_type}/lobby`); }} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-purple-500 text-white hover:bg-purple-400 transition-all">Join</button>
+                                <button onClick={() => { router.push(`/games/${inv.game_type}/lobby?code=${inv.join_code}`); }} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-purple-500 text-white hover:bg-purple-400 transition-all">Join</button>
                                 <button onClick={async () => { setDismissedInvite(inv.id); await supabase.from('game_invites').update({ status: 'dismissed' }).eq('id', inv.id); }} className="text-[9px] font-black uppercase px-3 py-1.5 rounded-full bg-white/5 text-slate-500 hover:bg-white/10 transition-all">Dismiss</button>
                             </div>
                         </motion.div>

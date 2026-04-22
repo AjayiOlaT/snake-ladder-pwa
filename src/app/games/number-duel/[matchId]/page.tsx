@@ -269,7 +269,18 @@ export default function NumberDuelGame() {
 
     const startNextRound = async () => {
         const { error } = await supabase.rpc('nd_next_round', { p_match_id: matchId });
-        if (error) alert(error.message);
+        if (error) console.error(error);
+    };
+
+    const handleSurrender = async () => {
+        if (!user || !match) return;
+        const oppId = match.player1_id === user.id ? match.player2_id : match.player1_id;
+        if (!oppId) return;
+        await supabase.from('number_duel_matches').update({
+            phase: 'finished',
+            status: 'finished',
+            winner_id: oppId,
+        }).eq('id', matchId);
     };
 
     const toggleMute = () => setIsMuted(music.toggleMute());
@@ -567,40 +578,50 @@ export default function NumberDuelGame() {
                                     >
                                         {isSubmitting ? <span className="animate-pulse">Submitting...</span> : 'Submit Guess'}
                                     </button>
-                                </div>
-                                        )}
                                     </div>
-                                </>
-                            )}
-
-                            {/* Guess Logs */}
-                            <div className="pt-3 border-t border-white/5">
-                                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center mb-2">Guess History</p>
-                                <div className="space-y-2 max-h-28 overflow-y-auto pr-1 flex flex-col-reverse">
-                                    {currentRoundGuesses.filter(g => g.player_id === user.id).map((g, i) => (
-                                        <div key={g.id} className="flex justify-between items-center p-2 px-3 rounded-xl border bg-white/5 border-white/5">
-                                            <div className="flex items-center gap-3">
-                                                 <span className="text-[8px] font-black uppercase text-slate-500">
-                                                    YOUR GUESS
-                                                 </span>
-                                                 <span className="font-black font-mono text-base">{g.guess}</span>
-                                            </div>
-                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border ${
-                                                g.feedback === 'correct' ? 'text-teal-400 border-teal-400/30' : 
-                                                g.feedback === 'higher' ? 'text-amber-400 border-amber-400/30' : 
-                                                g.feedback === 'lower' ? 'text-blue-400 border-blue-400/30' : 
-                                                'text-slate-600 border-white/5 bg-white/5'
-                                            }`}>
-                                                {g.feedback ? (g.feedback === 'correct' ? 'MATCH' : g.feedback.toUpperCase()) : 'PENDING...'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                )}
                             </div>
-                        </motion.div>
+                        </>
                     )}
-                </AnimatePresence>
-            </div>
-        </main>
-    );
+
+                        {/* Guess Logs */}
+                        <div className="pt-3 border-t border-white/5">
+                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center mb-2">Guess History</p>
+                            <div className="space-y-2 max-h-28 overflow-y-auto pr-1 flex flex-col-reverse">
+                                {currentRoundGuesses.filter(g => g.player_id === user.id).map((g, i) => (
+                                    <div key={g.id} className="flex justify-between items-center p-2 px-3 rounded-xl border bg-white/5 border-white/5">
+                                        <div className="flex items-center gap-3">
+                                             <span className="text-[8px] font-black uppercase text-slate-500">
+                                                 YOUR GUESS
+                                             </span>
+                                             <span className="font-black font-mono text-base">{g.guess}</span>
+                                        </div>
+                                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full border ${
+                                            g.feedback === 'correct' ? 'text-teal-400 border-teal-400/30' : 
+                                            g.feedback === 'higher' ? 'text-amber-400 border-amber-400/30' : 
+                                            g.feedback === 'lower' ? 'text-blue-400 border-blue-400/30' : 
+                                            'text-slate-600 border-white/5 bg-white/5'
+                                        }`}>
+                                            {g.feedback ? (g.feedback === 'correct' ? 'MATCH' : g.feedback.toUpperCase()) : 'PENDING...'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Surrender */}
+                        <div className="pt-2 border-t border-white/5">
+                            <button
+                                onClick={() => { if (window.confirm('Surrender this match? Your opponent wins.')) handleSurrender(); }}
+                                className="w-full py-2 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-rose-400 transition-colors"
+                            >
+                                🏳 Surrender
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    </main>
+);
 }

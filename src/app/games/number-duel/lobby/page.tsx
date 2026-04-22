@@ -2,12 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '../../../../lib/supabaseClient';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Suspense } from 'react';
 
 export default function NumberDuelLobby() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Lobby...</div>}>
+            <LobbyContent />
+        </Suspense>
+    );
+}
+
+function LobbyContent() {
     const [supabase] = useState(() => createClient());
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [user, setUser] = useState<any>(null);
     
     const [isHosting, setIsHosting] = useState(false);
@@ -29,8 +39,15 @@ export default function NumberDuelLobby() {
                 router.replace('/login');
             }
         });
+
+        // Auto-fill code from URL
+        const code = searchParams.get('code');
+        if (code) {
+            setJoinPin(code.toUpperCase());
+        }
+
         return () => authListener.subscription.unsubscribe();
-    }, [supabase, router]);
+    }, [supabase, router, searchParams]);
 
     const handleHostGame = async () => {
         if (!user) return;
