@@ -31,6 +31,9 @@ export default function NumberDuelGame() {
     const [isMuted, setIsMuted] = useState(false);
     const [flashColor, setFlashColor] = useState<string | null>(null);
     const [flashText, setFlashText] = useState<{text: string, color: string} | null>(null);
+    const [penaltyActive, setPenaltyActive] = useState(false);
+    const [showPenaltyModal, setShowPenaltyModal] = useState(false);
+    const [pendingResponse, setPendingResponse] = useState<any>(null);
 
     useEffect(() => { setIsMuted(music.isMuted()); }, []);
 
@@ -227,27 +230,84 @@ export default function NumberDuelGame() {
         setIsSubmitting(false);
     };
 
+    const submitPenaltyResponse = async () => {
+        if (!pendingResponse || isSubmitting) return;
+        const { actualFeedback, latestGuess } = pendingResponse;
+        
+        setShowPenaltyModal(false);
+        setIsSubmitting(true);
+        setPenaltyActive(true);
+        music.playLowerSound();
+        setTimeout(() => setPenaltyActive(false), 4000);
+
+        await supabase.from('number_duel_guesses')
+            .update({ feedback: actualFeedback })
+            .eq('id', latestGuess.id);
+
+        const isP1 = user.id === match.player1_id;
+        const update: any = {
+            current_turn_id: latestGuess.player_id, // Opponent keeps turn (Turn Skip)
+            last_event_text: 'Penalty: Misleading detected.',
+            last_event_type: 'penalty',
+            last_event_player_id: user.id,
+            updated_at: new Date().toISOString()
+        };
+
+        if (actualFeedback === 'correct') {
+            const guesserIsP1 = !isP1;
+            const p1NewScore = match.p1_score + (guesserIsP1 ? 1 : 0);
+            const p2NewScore = match.p2_score + (guesserIsP1 ? 0 : 1);
+            update.p1_score = p1NewScore;
+            update.p2_score = p2NewScore;
+            if (p1NewScore >= match.rounds_to_win || p2NewScore >= match.rounds_to_win) {
+                update.phase = 'finished';
+                update.winner_id = p1NewScore >= match.rounds_to_win ? match.player1_id : match.player2_id;
+            } else {
+                update.phase = 'round_end';
+            }
+        }
+
+        await supabase.from('number_duel_matches').update(update).eq('id', matchId);
+        setIsSubmitting(false);
+        setPendingResponse(null);
+    };
+
     const handleResponse = async (feedback: 'higher' | 'lower' | 'correct') => {
         if (!user || !match || isSubmitting) return;
         const currentRoundGuesses = guesses.filter(g => !g.round_number || g.round_number === match.round_number);
         const latestGuess = currentRoundGuesses[0];
         if (!latestGuess || latestGuess.player_id === user.id) return;
 
+        // Validation & Penalty Logic
+        const secret = parseInt(mySecret);
+        const actualFeedback = latestGuess.guess < secret ? 'higher' : latestGuess.guess > secret ? 'lower' : 'correct';
+        
+        let finalFeedback = feedback;
+        let skipTurnSwitch = false;
+
+        if (feedback !== actualFeedback) {
+            setPendingResponse({ feedback, actualFeedback, latestGuess });
+            setShowPenaltyModal(true);
+            return;
+        }
+
         setIsSubmitting(true);
         
         await supabase.from('number_duel_guesses')
-            .update({ feedback })
+            .update({ feedback: finalFeedback })
             .eq('id', latestGuess.id);
 
         const isP1 = user.id === match.player1_id;
+        
+        // Normally switches turn. If skipTurnSwitch is true, we keep the current_turn_id as the guesser (latestGuess.player_id)
         const update: any = {
-            current_turn_id: isP1 ? match.player1_id : match.player2_id
+            current_turn_id: skipTurnSwitch ? latestGuess.player_id : (isP1 ? match.player1_id : match.player2_id),
+            last_event_text: null,
+            last_event_type: null,
+            last_event_player_id: null
         };
 
-        if (feedback === 'correct') {
-            // isP1 = the responder (number owner). The GUESSER wins the point.
-            // If responder is P1, the guesser is P2 → P2 scores.
-            // If responder is P2, the guesser is P1 → P1 scores.
+        if (finalFeedback === 'correct') {
             const guesserIsP1 = !isP1;
             const p1NewScore = match.p1_score + (guesserIsP1 ? 1 : 0);
             const p2NewScore = match.p2_score + (guesserIsP1 ? 0 : 1);
@@ -261,6 +321,31 @@ export default function NumberDuelGame() {
             } else {
                 update.phase = 'round_end';
             }
+        }
+
+        await supabase.from('number_duel_matches').update(update).eq('id', matchId);
+        setIsSubmitting(false);
+    };
+
+    const handleSurrenderRound = async () => {
+        if (!user || !match || isSubmitting) return;
+        if (!window.confirm("Surrender this round? Your opponent will gain 1 point.")) return;
+
+        setIsSubmitting(true);
+        const isP1 = user.id === match.player1_id;
+        const p1NewScore = match.p1_score + (isP1 ? 0 : 1);
+        const p2NewScore = match.p2_score + (isP1 ? 1 : 0);
+        
+        const update: any = {
+            p1_score: p1NewScore,
+            p2_score: p2NewScore,
+        };
+
+        if (p1NewScore >= match.rounds_to_win || p2NewScore >= match.rounds_to_win) {
+            update.phase = 'finished';
+            update.winner_id = p1NewScore >= match.rounds_to_win ? match.player1_id : match.player2_id;
+        } else {
+            update.phase = 'round_end';
         }
 
         await supabase.from('number_duel_matches').update(update).eq('id', matchId);
@@ -331,9 +416,72 @@ export default function NumberDuelGame() {
             <button onClick={toggleMute} className="fixed top-4 right-4 z-50 bg-white/10 hover:bg-white/20 p-3 rounded-full backdrop-blur-md transition-all text-xl border border-white/10">
                 {isMuted ? '🔇' : '🔊'}
             </button>
-
-            <div className="z-10 w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl relative">
+            <div className="z-10 w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
                 
+                {/* Penalty Notification Overlay (Synced) */}
+                <AnimatePresence>
+                    {match.last_event_type === 'penalty' && (
+                        <motion.div 
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -50, opacity: 0 }}
+                            className="absolute top-0 left-0 right-0 z-50 bg-red-600/90 backdrop-blur-md py-3 px-4 flex items-center gap-3 shadow-2xl"
+                        >
+                            <span className="text-xl">🛡️</span>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white">
+                                {match.last_event_player_id === user.id ? (
+                                    "You tried to trick your opponent! Penalty: 1 skipped turn."
+                                ) : (
+                                    "Your opponent tried to trick you! They have been penalized and you have one extra turn awarded."
+                                )}
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Penalty Modal Overlay (Local) */}
+                <AnimatePresence>
+                    {showPenaltyModal && pendingResponse && (
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 text-center"
+                        >
+                            <motion.div 
+                                initial={{ scale: 0.9, y: 20 }}
+                                animate={{ scale: 1, y: 0 }}
+                                className="space-y-6"
+                            >
+                                <div className="w-20 h-20 bg-red-500/20 border border-red-500/40 rounded-full flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                                    <span className="text-4xl animate-bounce">⚠️</span>
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-black italic tracking-tighter text-red-500 uppercase">Misleading Detected!</h3>
+                                    <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                                        Your secret is <span className="text-white font-bold">{mySecret}</span>, but they guessed <span className="text-white font-bold">{pendingResponse.latestGuess.guess}</span>.<br/>
+                                        Providing incorrect feedback will trigger a <span className="text-red-400 font-black">TURN SKIP</span> penalty.
+                                    </p>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button 
+                                        onClick={submitPenaltyResponse}
+                                        className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-red-900/40 transition-all active:scale-95"
+                                    >
+                                        I Understand, Apply Penalty
+                                    </button>
+                                    <button 
+                                        onClick={() => { setShowPenaltyModal(false); setPendingResponse(null); }}
+                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-slate-400 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all"
+                                    >
+                                        Go Back
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 {/* Headers / Scores */}
                 {match.player2_id && (
                     <div className="flex justify-between items-center mb-3">
@@ -469,10 +617,13 @@ export default function NumberDuelGame() {
                             
                             {/* HUD: Deduction Display */}
                             <div className="grid grid-cols-2 gap-2">
-                                <div className={`p-3 rounded-2xl border ${awaitingMyResponse ? 'bg-amber-500/10 border-amber-500/50' : 'bg-white/5 border-white/10'}`}>
-                                    <p className="text-[8px] font-black text-slate-500 uppercase mb-1">Game Status</p>
-                                    <p className="font-black italic text-xs truncate uppercase tracking-tighter">
-                                        {awaitingMyResponse ? 'RESPOND NOW!' : 
+                                <div className={`p-3 rounded-2xl border ${penaltyActive ? 'bg-red-500/20 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : awaitingMyResponse ? 'bg-amber-500/10 border-amber-500/50' : 'bg-white/5 border-white/10'} transition-all duration-300`}>
+                                    <p className="text-[8px] font-black text-slate-500 uppercase mb-1">
+                                        {penaltyActive ? 'PENALTY APPLIED' : 'Game Status'}
+                                    </p>
+                                    <p className={`font-black italic text-xs truncate uppercase tracking-tighter ${penaltyActive ? 'text-red-500 animate-pulse' : ''}`}>
+                                        {penaltyActive ? 'TURN SKIPPED!' : 
+                                         awaitingMyResponse ? 'RESPOND NOW!' : 
                                          awaitingOpponentResponse ? 'WAITING...' :
                                          isMyTurn ? 'YOUR TURN' : 'OPPONENT GUESSING'}
                                     </p>
@@ -609,13 +760,19 @@ export default function NumberDuelGame() {
                             </div>
                         </div>
 
-                        {/* Surrender */}
-                        <div className="pt-2 border-t border-white/5">
+                        {/* Surrender / Quit */}
+                        <div className="pt-2 border-t border-white/5 flex gap-1">
                             <button
-                                onClick={() => { if (window.confirm('Surrender this match? Your opponent wins.')) handleSurrender(); }}
-                                className="w-full py-2 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-rose-400 transition-colors"
+                                onClick={handleSurrenderRound}
+                                className="flex-1 py-2 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-amber-400 transition-colors border-r border-white/5"
                             >
-                                🏳 Surrender
+                                🏳 Surrender Round
+                            </button>
+                            <button
+                                onClick={() => { if (window.confirm('Quit this match? Your opponent wins.')) handleSurrender(); }}
+                                className="flex-1 py-2 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-rose-400 transition-colors"
+                            >
+                                🚪 Quit Game
                             </button>
                         </div>
                     </motion.div>
