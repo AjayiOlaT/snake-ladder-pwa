@@ -252,7 +252,7 @@ function LobbyContent() {
                         </div>
 
                         <button 
-                            onClick={handleHostGame}
+                            onClick={() => handleHostGame()}
                             disabled={isHosting || isNaN(rangeMin) || isNaN(rangeMax) || rangeMax <= rangeMin}
                             className="w-full py-4 bg-gradient-to-r from-rose-500 to-rose-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center disabled:opacity-30 disabled:hover:scale-100"
                         >

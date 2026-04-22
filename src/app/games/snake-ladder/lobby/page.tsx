@@ -184,7 +184,7 @@ export default function LobbyPage() {
                         </div>
 
                         <button 
-                            onClick={handleHostGame}
+                            onClick={() => handleHostGame()}
                             disabled={isHosting}
                             className="w-full py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center"
                         >
