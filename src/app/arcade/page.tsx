@@ -26,6 +26,16 @@ const games = [
         icon: '/number-duel-thumb.png',
         path: '/games/number-duel/lobby',
         status: 'playable'
+    },
+    {
+        id: 'tug-of-war',
+        title: 'Tug of War',
+        subtitle: 'Learning Engine',
+        description: 'A real-time battle of wits. Answer questions to pull the rope and defeat your opponent.',
+        color: 'from-purple-600 to-indigo-400',
+        icon: '/tug-of-war-thumb.png',
+        path: '/games/tug-of-war/lobby',
+        status: 'playable'
     }
 ];
 
@@ -117,7 +127,11 @@ export default function ArcadePage() {
     return (
         <main className="min-h-screen bg-slate-950 text-white selection:bg-indigo-500/30 overflow-y-auto relative">
             {/* Ambient Background */}
-            <div className={`fixed inset-0 transition-colors duration-1000 bg-gradient-to-br ${activeGame.id === 'snake-ladder' ? 'from-indigo-950/40 via-slate-950 to-teal-950/40' : 'from-rose-950/40 via-slate-950 to-amber-950/40'}`}>
+            <div className={`fixed inset-0 transition-colors duration-1000 bg-gradient-to-br ${
+                activeGame.id === 'snake-ladder' ? 'from-indigo-950/40 via-slate-950 to-teal-950/40' : 
+                activeGame.id === 'number-duel' ? 'from-rose-950/40 via-slate-950 to-amber-950/40' :
+                'from-purple-950/40 via-slate-950 to-indigo-950/40'
+            }`}>
                 <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[150px] animate-pulse" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-teal-500/10 rounded-full blur-[150px] animate-pulse" />
             </div>
