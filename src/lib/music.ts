@@ -282,6 +282,16 @@ class MusicEngine {
       this._tone(freq * 2, t, 0.6, 0.08, 'triangle');
     });
   }
+
+  async playMoveSound() {
+    if (!(await this._prepareSFX())) return;
+    const t = this.ctx!.currentTime;
+    // A quick "tug" sound
+    const notes = [150, 100];
+    notes.forEach((freq, i) => {
+      this._tone(freq, t + i * 0.05, 0.1, 0.2, 'sawtooth');
+    });
+  }
 }
 
 export const music = new MusicEngine();

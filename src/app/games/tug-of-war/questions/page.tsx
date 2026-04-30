@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '../../../lib/supabaseClient';
+import { createClient } from '../../../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import CustomSelect from '../../../components/CustomSelect';
+import CustomSelect from '../../../../components/CustomSelect';
 
 export default function QuestionManager() {
     const [supabase] = useState(() => createClient());
