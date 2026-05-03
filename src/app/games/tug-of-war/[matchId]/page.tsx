@@ -11,6 +11,7 @@ import QuestionArena from '../../../../components/TugOfWar/QuestionArena';
 interface TugOfWarConfig {
     subject: string;
     difficulty: 'easy' | 'medium' | 'hard';
+    multiplier?: number;
 }
 
 interface TugOfWarMatch {
@@ -80,7 +81,7 @@ export default function TugOfWarGame() {
             const playerIds = [session.user.id, oppId].filter(Boolean);
             const { data: profileRows } = await supabase.from('profiles').select('id, username, avatar_url').in('id', playerIds);
             if (profileRows) {
-                setMyProfile(profileRows.find((p: any) => p.id === session.user.id));
+                setMyProfile(profileRows.find((p: any) => p.id === session.user.id) || null);
                 const opp = profileRows.find((p: any) => p.id === oppId);
                 if (opp) setOpponentProfile(opp);
             }
