@@ -20,6 +20,7 @@ function LobbyContent() {
     const searchParams = useSearchParams();
     const [user, setUser] = useState<any>(null);
     
+    const [gameMode, setGameMode] = useState<'selection' | 'online' | 'local'>('selection');
     const [isHosting, setIsHosting] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
     const [joinPin, setJoinPin] = useState('');
@@ -45,6 +46,8 @@ function LobbyContent() {
         const code = searchParams.get('code');
         if (code) {
             setJoinPin(code.toUpperCase());
+            setGameMode('online');
+            setIsJoining(true);
         }
 
         return () => authListener.subscription.unsubscribe();
@@ -56,6 +59,7 @@ function LobbyContent() {
         const challengeId = searchParams.get('challengeId');
         if (challengeId) {
             hasAutoChallenged.current = true;
+            setGameMode('online');
             handleHostGame(challengeId);
         }
     }, [user, searchParams]);
@@ -97,6 +101,13 @@ function LobbyContent() {
         
         setTimeout(() => {
             router.push(`/games/tug-of-war/${data.id}`);
+        }, 800);
+    };
+
+    const handleStartLocalGame = () => {
+        setIsEstablishing(true);
+        setTimeout(() => {
+            router.push(`/games/tug-of-war/local?subject=${subject}&difficulty=${difficulty}`);
         }, 800);
     };
 
@@ -205,109 +216,192 @@ function LobbyContent() {
                   </motion.div>
               )}
 
-              <div className="grid md:grid-cols-2 gap-8">
-                  
-                  {/* HOST PANEL */}
-                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-purple-500/50 transition-colors">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      
-                      <div className="relative z-10">
-                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-purple-500/30">
-                            🏗️
+              <AnimatePresence mode="wait">
+                {gameMode === 'selection' ? (
+                  <motion.div 
+                    key="selection"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="grid md:grid-cols-2 gap-8"
+                  >
+                      {/* LOCAL DUEL CARD */}
+                      <button 
+                        onClick={() => setGameMode('local')}
+                        className="group relative h-80 bg-white/5 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center hover:border-sky-500/50 transition-all overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-b from-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="w-24 h-24 rounded-3xl bg-sky-500/20 flex items-center justify-center text-5xl mb-6 shadow-inner border border-sky-500/30 group-hover:scale-110 transition-transform">
+                            📱
                         </div>
-                        <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Host Match</h2>
-                        <p className="text-slate-400 font-medium text-[11px] mb-6">Create a rope arena and set your specialty.</p>
+                        <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">Local Duel</h2>
+                        <p className="text-slate-400 font-medium text-sm max-w-[200px]">Two players, one device. Face-to-face battle!</p>
                         
-                        <div className="space-y-6 mb-8">
-                            {/* Subject Setting */}
-                            <CustomSelect 
-                                label="Subject Area"
-                                value={subject}
-                                onChange={setSubject}
-                                options={[
-                                    { value: 'Math', label: 'Mathematics' },
-                                    { value: 'Science', label: 'Science (Coming Soon)', disabled: true },
-                                    { value: 'History', label: 'History (Coming Soon)', disabled: true }
-                                ]}
-                            />
-
-                            {/* Difficulty Setting */}
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Your Difficulty (Professor vs Student)</label>
-                                <div className="flex gap-2">
-                                    {['easy', 'medium', 'hard'].map(d => (
-                                        <button 
-                                            key={d}
-                                            onClick={() => setDifficulty(d)}
-                                            className={`flex-1 py-2 rounded-xl font-black border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-purple-500 border-purple-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}
-                                        >
-                                            {d}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[9px] text-slate-500 font-medium">Harder difficulty = Stronger pull per answer.</p>
-                            </div>
+                        <div className="mt-8 px-8 py-3 bg-sky-500 rounded-full text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-sky-500/40 hover:bg-sky-600 transition-colors">
+                            Setup Arena
                         </div>
+                      </button>
 
-                        <button 
-                            onClick={() => handleHostGame()}
-                            disabled={isHosting}
-                            className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center disabled:opacity-30 disabled:hover:scale-100"
-                        >
-                            {isHosting ? <span className="animate-pulse">Opening Arena...</span> : 'Generate Arena'}
-                        </button>
-                      </div>
-                  </div>
-
-                  {/* JOIN PANEL */}
-                  <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
-                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      
-                      <div className="relative z-10 flex flex-col h-full">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-indigo-500/30">
-                            🔗
+                      {/* ONLINE WAR CARD */}
+                      <button 
+                        onClick={() => setGameMode('online')}
+                        className="group relative h-80 bg-white/5 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center hover:border-purple-500/50 transition-all overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="w-24 h-24 rounded-3xl bg-purple-500/20 flex items-center justify-center text-5xl mb-6 shadow-inner border border-purple-500/30 group-hover:scale-110 transition-transform">
+                            🌍
                         </div>
-                        <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Join Match</h2>
-                        <p className="text-slate-400 font-medium text-[11px] mb-8">Enter an Arena Code to join a battle.</p>
+                        <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">Online War</h2>
+                        <p className="text-slate-400 font-medium text-sm max-w-[200px]">Invite a friend or join a remote arena.</p>
                         
-                        <div className="mt-auto space-y-6">
-                            {/* Joint Config */}
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Your Challenge Difficulty</label>
-                                <div className="flex gap-2">
-                                    {['easy', 'medium', 'hard'].map(d => (
-                                        <button 
-                                            key={d}
-                                            onClick={() => setDifficulty(d)}
-                                            className={`flex-1 py-2 rounded-xl font-black border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-indigo-500 border-indigo-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}
-                                        >
-                                            {d}
-                                        </button>
-                                    ))}
+                        <div className="mt-8 px-8 py-3 bg-purple-500 rounded-full text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-purple-500/40 hover:bg-purple-600 transition-colors">
+                            Enter Lobby
+                        </div>
+                      </button>
+                  </motion.div>
+                ) : gameMode === 'local' ? (
+                  <motion.div 
+                    key="local"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex flex-col gap-6 items-center"
+                  >
+                    <button 
+                        onClick={() => setGameMode('selection')}
+                        className="self-start text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2"
+                    >
+                        ← Back to Mode Selection
+                    </button>
+
+                    <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 flex flex-col shadow-2xl relative overflow-hidden group hover:border-sky-500/50 transition-colors">
+                        <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
+                        <div className="relative z-10 text-center">
+                            <div className="w-20 h-20 rounded-3xl bg-sky-500/20 mx-auto flex items-center justify-center text-4xl mb-6 shadow-inner border border-sky-500/30">
+                                ⚔️
+                            </div>
+                            <h2 className="text-2xl font-black text-white mb-2 uppercase italic tracking-tight">Arena Setup</h2>
+                            <p className="text-slate-400 font-medium text-xs mb-8">Choose your weapons for the local duel.</p>
+                            
+                            <div className="space-y-8 text-left mb-10">
+                                <CustomSelect 
+                                    label="Subject Area"
+                                    value={subject}
+                                    onChange={setSubject}
+                                    options={[
+                                        { value: 'Math', label: 'Mathematics' },
+                                        { value: 'Science', label: 'Science (Coming Soon)', disabled: true },
+                                        { value: 'History', label: 'History (Coming Soon)', disabled: true }
+                                    ]}
+                                />
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duel Difficulty</label>
+                                    <div className="flex gap-2">
+                                        {['easy', 'medium', 'hard'].map(d => (
+                                            <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-3 rounded-2xl font-black border transition-all text-xs uppercase tracking-widest ${difficulty === d ? 'bg-sky-500 border-sky-400 text-white shadow-lg shadow-sky-500/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
+                                                {d}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-
-                            <input 
-                                type="text"
-                                maxLength={6}
-                                placeholder="ARENA CODE"
-                                value={joinPin}
-                                onChange={(e) => setJoinPin(e.target.value.toUpperCase())}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-6 py-5 text-center text-3xl font-black text-indigo-300 tracking-[0.5em] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-700 transition-all font-mono"
-                            />
 
                             <button 
-                                onClick={handleJoinGame}
-                                disabled={isJoining || joinPin.length !== 6}
-                                className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 disabled:hover:scale-100 transition-all flex justify-center"
+                                onClick={handleStartLocalGame}
+                                className="w-full py-5 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-2xl text-white font-black text-xl tracking-wider uppercase shadow-[0_0_30px_rgba(14,165,233,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                {isJoining ? <span className="animate-pulse">Linking Arena...</span> : 'Enter Battle'}
+                                Start Duel
                             </button>
                         </div>
-                      </div>
-                  </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="online"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="flex flex-col gap-6"
+                  >
+                    <button 
+                        onClick={() => setGameMode('selection')}
+                        className="self-start text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2"
+                    >
+                        ← Back to Mode Selection
+                    </button>
 
-              </div>
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* HOST PANEL */}
+                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            
+                            <div className="relative z-10">
+                                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-purple-500/30">
+                                    🏗️
+                                </div>
+                                <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Host Match</h2>
+                                <p className="text-slate-400 font-medium text-[11px] mb-6">Create a rope arena and set your specialty.</p>
+                                
+                                <div className="space-y-6 mb-8">
+                                    <CustomSelect 
+                                        label="Subject Area"
+                                        value={subject}
+                                        onChange={setSubject}
+                                        options={[
+                                            { value: 'Math', label: 'Mathematics' },
+                                            { value: 'Science', label: 'Science (Coming Soon)', disabled: true },
+                                            { value: 'History', label: 'History (Coming Soon)', disabled: true }
+                                        ]}
+                                    />
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</label>
+                                        <div className="flex gap-2">
+                                            {['easy', 'medium', 'hard'].map(d => (
+                                                <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-xl font-black border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-purple-500 border-purple-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
+                                                    {d}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={() => handleHostGame()} disabled={isHosting} className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center disabled:opacity-30">
+                                    {isHosting ? <span className="animate-pulse">Opening Arena...</span> : 'Generate Arena'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* JOIN PANEL */}
+                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative z-10 flex flex-col h-full">
+                                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-indigo-500/30">
+                                    🔗
+                                </div>
+                                <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Join Match</h2>
+                                <p className="text-slate-400 font-medium text-[11px] mb-8">Enter an Arena Code to join a battle.</p>
+                                <div className="mt-auto space-y-6">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</label>
+                                        <div className="flex gap-2">
+                                            {['easy', 'medium', 'hard'].map(d => (
+                                                <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-xl font-black border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-indigo-500 border-indigo-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
+                                                    {d}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <input type="text" maxLength={6} placeholder="ARENA CODE" value={joinPin} onChange={(e) => setJoinPin(e.target.value.toUpperCase())} className="w-full bg-black/40 border border-white/10 rounded-xl px-6 py-5 text-center text-3xl font-black text-indigo-300 tracking-[0.5em] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-700 transition-all font-mono" />
+                                    <button onClick={handleJoinGame} disabled={isJoining || joinPin.length !== 6} className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex justify-center">
+                                        {isJoining ? <span className="animate-pulse">Linking Arena...</span> : 'Enter Battle'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
           </div>
 
           {/* Rules Modal */}

@@ -15,9 +15,10 @@ interface QuestionArenaProps {
     onCorrect: (impact: number) => void;
     multiplier: number;
     disabled?: boolean;
+    compact?: boolean;
 }
 
-export default function QuestionArena({ questions, onCorrect, multiplier, disabled }: QuestionArenaProps) {
+export default function QuestionArena({ questions, onCorrect, multiplier, disabled, compact }: QuestionArenaProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -48,7 +49,7 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
     if (!currentQuestion) return <div className="text-slate-500 font-bold uppercase tracking-widest text-xs">Waiting for neural feed...</div>;
 
     return (
-        <div className="w-full max-w-xl bg-white/90 backdrop-blur-xl border-4 border-white rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
+        <div className={`w-full max-w-xl bg-white/90 backdrop-blur-xl border-4 border-white shadow-2xl relative overflow-hidden flex flex-col ${compact ? 'rounded-[1.5rem] p-4 gap-4' : 'rounded-[2.5rem] p-8 gap-8'}`}>
             <AnimatePresence mode="wait">
                 <motion.div 
                     key={currentQuestion.id}
@@ -59,21 +60,22 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
                 >
                     <div className="flex justify-between items-center">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question {currentIndex + 1}</span>
-                        <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Power: x{multiplier.toFixed(1)}</span>
+                        <span className={`font-black uppercase tracking-widest ${compact ? 'text-[8px] text-sky-500' : 'text-[10px] text-sky-600'}`}>Power: x{multiplier.toFixed(1)}</span>
                     </div>
 
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-relaxed">
+                    <h2 className={`font-black text-slate-800 leading-relaxed ${compact ? 'text-base' : 'text-xl md:text-2xl'}`}>
                         {currentQuestion.question_text}
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className={`grid grid-cols-1 gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
                         {currentQuestion.options.map((option, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => handleAnswer(option)}
                                 disabled={disabled || cooldown}
                                 className={`
-                                    relative p-5 rounded-2xl border-2 transition-all text-left font-black text-sm shadow-sm
+                                    relative rounded-2xl border-2 transition-all text-left font-black shadow-sm
+                                    ${compact ? 'p-3 text-[12px]' : 'p-5 text-sm'}
                                     ${selectedOption === option 
                                         ? (isCorrect ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700')
                                         : 'bg-slate-50 border-slate-100 hover:border-sky-400 text-slate-600'

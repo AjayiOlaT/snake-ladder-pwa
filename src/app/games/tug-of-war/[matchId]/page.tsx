@@ -50,6 +50,7 @@ export default function TugOfWarGame() {
     // Friends & Invite
     const [friends, setFriends] = useState<Profile[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [showQuitConfirm, setShowQuitConfirm] = useState(false);
     const [invitingId, setInvitingId] = useState<string | null>(null);
 
     useEffect(() => { setIsMuted(music.isMuted()); }, []);
@@ -235,11 +236,54 @@ export default function TugOfWarGame() {
                     <button onClick={toggleMute} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
                         {isMuted ? '🔇' : '🔊'}
                     </button>
-                    <button onClick={() => router.push('/arcade')} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+                    <button onClick={() => setShowQuitConfirm(true)} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white hover:border-red-400 transition-all active:scale-95">
                         Quit
                     </button>
                 </div>
             </nav>
+
+            {/* QUIT CONFIRMATION MODAL */}
+            <AnimatePresence>
+                {showQuitConfirm && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowQuitConfirm(false)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-sm bg-white rounded-[3rem] p-8 shadow-2xl border-4 border-sky-100 flex flex-col items-center text-center gap-6"
+                        >
+                            <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center text-4xl mb-2">
+                                🏃‍♂️
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800 tracking-tighter uppercase mb-2">Leaving already?</h3>
+                                <p className="text-slate-500 font-medium">Your progress in this match will be lost. The sun is still shining!</p>
+                            </div>
+                            <div className="flex flex-col w-full gap-3">
+                                <button 
+                                    onClick={() => setShowQuitConfirm(false)}
+                                    className="w-full py-4 rounded-2xl bg-sky-500 text-white font-black uppercase tracking-widest shadow-lg shadow-sky-200 hover:bg-sky-600 active:scale-[0.98] transition-all"
+                                >
+                                    Stay & Play
+                                </button>
+                                <button 
+                                    onClick={() => router.push('/arcade')}
+                                    className="w-full py-4 rounded-2xl bg-slate-100 text-slate-500 font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 active:scale-[0.98] transition-all"
+                                >
+                                    I'm Done
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <div className="z-10 w-full max-w-4xl flex flex-col gap-12 items-center">
                 

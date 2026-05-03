@@ -36,8 +36,8 @@ export default function Rope({ position }: RopeProps) {
             <motion.div 
                 className="absolute h-4 md:h-6 z-10 rounded-full"
                 style={{
-                    left: useTransform(leftX, (v) => `calc(15% + ${v}%)`),
-                    right: useTransform(rightX, (v) => `calc(15% - ${v}%)`),
+                    left: useTransform(leftX, (v) => `calc(20% + ${v}%)`),
+                    right: useTransform(rightX, (v) => `calc(20% - ${v}%)`),
                     backgroundColor: '#e6ccb2',
                     backgroundImage: 'repeating-linear-gradient(45deg, #ddb892, #ddb892 10px, #b08968 10px, #b08968 20px)',
                     boxShadow: '0 4px 10px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3)'
@@ -55,10 +55,10 @@ export default function Rope({ position }: RopeProps) {
             {/* Player 1 (Kid Left) */}
             <motion.div 
                 className="absolute flex flex-col items-center gap-1 z-30"
-                style={{ left: useTransform(leftX, (v) => `calc(15% + ${v}%)`), translateX: '-50%' }}
+                style={{ left: useTransform(leftX, (v) => `calc(20% + ${v}%)`), translateX: '-50%' }}
                 animate={{ 
                     rotate: position < 0 ? -8 : 4,
-                    scale: position < 0 ? 1 : 0.9,
+                    scale: position < 0 ? 1.05 : 1,
                 }}
                 transition={{ type: 'spring', stiffness: 50, damping: 20 }}
             >
@@ -66,22 +66,22 @@ export default function Rope({ position }: RopeProps) {
                     <img 
                         src="/tug-of-war/kid-left.png" 
                         alt="Kid 1" 
-                        className={`w-full h-full object-contain transition-all duration-700 ${position < 0 ? 'opacity-100' : 'opacity-60'}`}
+                        className={`w-full h-full object-contain transition-all duration-700 ${position < 0 ? 'opacity-100' : 'opacity-70'}`}
                         style={{ mixBlendMode: 'multiply', filter: 'contrast(1.3) brightness(1.1)' }}
                     />
                 </div>
                 <div className={`px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-md transition-colors duration-500 ${position < 0 ? 'bg-yellow-400 text-slate-900' : 'bg-white/40 text-slate-600'}`}>
-                    {position < 0 ? 'PULL!' : 'WHOA!'}
+                    {position < 0 ? 'PULLING!' : 'STAY STRONG!'}
                 </div>
             </motion.div>
 
             {/* Player 2 (Kid Right) */}
             <motion.div 
                 className="absolute flex flex-col items-center gap-1 z-30"
-                style={{ right: useTransform(rightX, (v) => `calc(15% - ${v}%)`), translateX: '50%' }}
+                style={{ right: useTransform(rightX, (v) => `calc(20% - ${v}%)`), translateX: '50%' }}
                 animate={{ 
                     rotate: position > 0 ? 8 : -4,
-                    scale: position > 0 ? 1 : 0.9,
+                    scale: position > 0 ? 1.05 : 1,
                 }}
                 transition={{ type: 'spring', stiffness: 50, damping: 20 }}
             >
@@ -89,12 +89,12 @@ export default function Rope({ position }: RopeProps) {
                     <img 
                         src="/tug-of-war/kid-right.png" 
                         alt="Kid 2" 
-                        className={`w-full h-full object-contain transition-all duration-700 ${position > 0 ? 'opacity-100' : 'opacity-60'}`}
+                        className={`w-full h-full object-contain transition-all duration-700 ${position > 0 ? 'opacity-100' : 'opacity-70'}`}
                         style={{ mixBlendMode: 'multiply', filter: 'contrast(1.3) brightness(1.1)' }}
                     />
                 </div>
                 <div className={`px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-md transition-colors duration-500 ${position > 0 ? 'bg-yellow-400 text-slate-900' : 'bg-white/40 text-slate-600'}`}>
-                    {position > 0 ? 'WINNING!' : 'PULL!'}
+                    {position > 0 ? 'PULLING!' : 'STAY STRONG!'}
                 </div>
             </motion.div>
 
