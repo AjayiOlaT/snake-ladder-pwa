@@ -1,89 +1,105 @@
-'use client';
-
-import { motion } from 'framer-motion';
+import { motion, useSpring, useTransform } from 'framer-motion';
 
 interface RopeProps {
     position: number; // -100 to 100
 }
 
 export default function Rope({ position }: RopeProps) {
-    // Map -100..100 to 0%..100%
-    const percentage = ((position + 100) / 200) * 100;
+    // Spring physics for "Heavy" movement
+    const smoothPos = useSpring(position, { stiffness: 60, damping: 15 });
+    
+    // Map -100..100 to movement
+    // Winner pulls back by 10%, Loser dragged forward by 25%.
+    const leftX = useTransform(smoothPos, (v) => v < 0 ? (v / 100) * 10 : (v / 100) * 35);
+    const rightX = useTransform(smoothPos, (v) => v > 0 ? (v / 100) * 10 : (v / 100) * 35);
+    const knotX = useTransform(smoothPos, (v) => `${((v + 100) / 200) * 100}%`);
 
     return (
-        <div className="w-full h-32 relative flex items-center justify-center overflow-hidden">
-            {/* The Track */}
-            <div className="absolute inset-x-0 h-1 bg-white/10" />
+        <div className="w-full h-40 md:h-56 relative flex items-center justify-center overflow-visible mb-6 md:mb-12">
+            
+            {/* The Main Track (War-torn) */}
+            <div className="absolute inset-x-0 h-[1px] bg-white/20 blur-[1px]" />
+            <div className="absolute inset-x-0 h-8 bg-black/20 skew-y-1" />
 
-            {/* The Rope */}
+            {/* THE ACTUAL ROPE */}
             <motion.div 
-                className="absolute h-2 bg-gradient-to-r from-purple-500 via-white to-indigo-500 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-                initial={false}
-                animate={{ 
-                    left: `${percentage}%`,
-                    width: '300px', // Fixed length rope segment that slides
-                    translateX: '-50%' 
+                className="absolute h-3 md:h-4 bg-[#6b4423] shadow-[0_0_30px_rgba(0,0,0,0.5)] z-10"
+                style={{
+                    left: useTransform(leftX, (v) => `calc(15% + ${v}%)`),
+                    right: useTransform(rightX, (v) => `calc(15% - ${v}%)`),
+                    backgroundImage: 'repeating-linear-gradient(45deg, #8b5a2b, #8b5a2b 10px, #5c3a1b 10px, #5c3a1b 20px)'
                 }}
-                transition={{ type: 'spring', stiffness: 100, damping: 20 }}
             >
-                {/* Knot / Center Indicator */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-[0_0_30px_white] flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-slate-950 animate-pulse" />
-                </div>
+                {/* Friction Sparks (when moving) */}
+                <motion.div 
+                    className="absolute inset-0 bg-yellow-500/20 mix-blend-overlay"
+                    animate={{ opacity: [0, 0.4, 0] }}
+                    transition={{ repeat: Infinity, duration: 0.1 }}
+                />
 
-                {/* Tension Lines */}
-                <div className="absolute -top-4 -bottom-4 left-0 w-[1px] bg-white/20 blur-sm" />
-                <div className="absolute -top-4 -bottom-4 right-0 w-[1px] bg-white/20 blur-sm" />
-            </motion.div>
-
-            {/* Players Indicators */}
-            <motion.div 
-                className="absolute left-4 md:left-20 flex flex-col items-center gap-3"
-                animate={{ 
-                    x: position > 0 ? [0, 2, 0] : [0, -1, 0],
-                    scale: position < 0 ? 1.1 : 1
-                }}
-                transition={{ repeat: Infinity, duration: 0.15 }}
-            >
-                <div className="w-20 h-20 md:w-28 md:h-28 rounded-[2rem] overflow-hidden border-2 border-purple-500/30 shadow-[0_0_40px_rgba(168,85,247,0.3)] bg-slate-900/50 backdrop-blur-xl group">
-                    <img src="/tug-of-war/player-left.png" alt="Player 1" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 scale-x-[-1]" />
-                </div>
-                <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400">CHALLENGER</span>
-                    <div className="h-1 w-12 bg-purple-500/20 rounded-full mt-1 overflow-hidden">
-                        <motion.div 
-                            className="h-full bg-purple-500" 
-                            animate={{ width: position < 0 ? '100%' : '30%' }}
-                        />
+                {/* Center Knot (Metal Ring) */}
+                <motion.div 
+                    className="absolute top-1/2 -translate-y-1/2 w-10 h-10 md:w-14 md:h-14 z-20"
+                    style={{ left: knotX, translateX: '-50%' }}
+                >
+                    <div className="w-full h-full rounded-full bg-slate-200 shadow-[0_0_40px_white] flex items-center justify-center border-4 border-slate-400">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-900 border-2 border-slate-500 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse shadow-[0_0_10px_red]" />
+                        </div>
                     </div>
-                </div>
+                </motion.div>
             </motion.div>
 
+            {/* Player 1 (Challenger) */}
             <motion.div 
-                className="absolute right-4 md:right-20 flex flex-col items-center gap-3"
+                className="absolute flex flex-col items-center gap-3 z-30"
+                style={{ left: useTransform(leftX, (v) => `calc(15% + ${v}%)`), translateX: '-50%' }}
                 animate={{ 
-                    x: position < 0 ? [0, -2, 0] : [0, 1, 0],
-                    scale: position > 0 ? 1.1 : 1
+                    rotate: position < 0 ? -15 : 10,
+                    y: position < 0 ? [0, -2, 0] : [0, 1, 0]
                 }}
-                transition={{ repeat: Infinity, duration: 0.15 }}
             >
-                <div className="w-20 h-20 md:w-28 md:h-28 rounded-[2rem] overflow-hidden border-2 border-indigo-500/30 shadow-[0_0_40px_rgba(99,102,241,0.3)] bg-slate-900/50 backdrop-blur-xl group">
-                    <img src="/tug-of-war/player-right.png" alt="Player 2" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 scale-x-[-1]" />
+                <div className={`
+                    w-24 h-24 md:w-44 md:h-44 rounded-3xl md:rounded-[3rem] overflow-hidden border-4 transition-all duration-300
+                    ${position < 0 ? 'border-purple-500 shadow-[0_0_60px_rgba(168,85,247,0.7)]' : 'border-white/10 opacity-60'}
+                `}>
+                    {/* Boy facing right */}
+                    <img src="/tug-of-war/player-left.png" alt="P1" className="w-full h-full object-cover scale-x-[-1]" />
                 </div>
-                <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">OPPONENT</span>
-                    <div className="h-1 w-12 bg-indigo-500/20 rounded-full mt-1 overflow-hidden">
-                        <motion.div 
-                            className="h-full bg-indigo-500" 
-                            animate={{ width: position > 0 ? '100%' : '30%' }}
-                        />
-                    </div>
+                <div className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${position < 0 ? 'bg-purple-500 text-white' : 'bg-white/5 text-slate-500'}`}>
+                    {position < 0 ? 'PUSHING BACK' : 'DRAGGED!'}
                 </div>
             </motion.div>
 
-            {/* Win Zones */}
-            <div className="absolute left-0 top-0 bottom-0 w-4 bg-purple-500/10 border-r border-purple-500/20" />
-            <div className="absolute right-0 top-0 bottom-0 w-4 bg-indigo-500/10 border-l border-indigo-500/20" />
+            {/* Player 2 (Opponent) */}
+            <motion.div 
+                className="absolute flex flex-col items-center gap-3 z-30"
+                style={{ right: useTransform(rightX, (v) => `calc(15% - ${v}%)`), translateX: '50%' }}
+                animate={{ 
+                    rotate: position > 0 ? 15 : -10,
+                    y: position > 0 ? [0, -2, 0] : [0, 1, 0]
+                }}
+            >
+                <div className={`
+                    w-24 h-24 md:w-44 md:h-44 rounded-3xl md:rounded-[3rem] overflow-hidden border-4 transition-all duration-300
+                    ${position > 0 ? 'border-indigo-500 shadow-[0_0_60px_rgba(99,102,241,0.7)]' : 'border-white/10 opacity-60'}
+                `}>
+                    {/* Man facing left */}
+                    <img 
+                        src="/tug-of-war/player-right.png" 
+                        alt="P2" 
+                        className="w-full h-full object-cover" 
+                        style={{ transform: 'scaleX(-1)' }}
+                    />
+                </div>
+                <div className={`px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${position > 0 ? 'bg-indigo-500 text-white' : 'bg-white/5 text-slate-500'}`}>
+                    {position > 0 ? 'DOMINATING' : 'DRAGGED!'}
+                </div>
+            </motion.div>
+
+            {/* Ground Dust (War atmosphere) */}
+            <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-slate-950 to-transparent opacity-40 mix-blend-multiply" />
         </div>
     );
 }
+

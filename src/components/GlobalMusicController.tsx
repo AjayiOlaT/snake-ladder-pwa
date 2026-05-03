@@ -57,6 +57,8 @@ export default function GlobalAudioController() {
             music.setScene('snake-ladder');
         } else if (pathname.startsWith('/games/number-duel')) {
             music.setScene('number-duel');
+        } else if (pathname.startsWith('/games/tug-of-war')) {
+            music.setScene('tug-of-war');
         } else {
             // Keep current or default to hub for other shared areas (profile, etc)
             music.setScene('hub');

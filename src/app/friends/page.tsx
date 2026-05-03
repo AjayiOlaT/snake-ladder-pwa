@@ -396,7 +396,7 @@ export default function FriendsPage() {
     );
 }
 
-function ChallengeModal({ friend, onClose, onSelect }: { friend: any, onClose: () => void, onSelect: (game: 'number-duel' | 'snake-ladder') => void }) {
+function ChallengeModal({ friend, onClose, onSelect }: { friend: any, onClose: () => void, onSelect: (game: 'number-duel' | 'snake-ladder' | 'tug-of-war') => void }) {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-xl">
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm bg-white/5 border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
@@ -437,6 +437,20 @@ function ChallengeModal({ friend, onClose, onSelect }: { friend: any, onClose: (
                                     <p className="text-[9px] text-teal-400 font-bold uppercase tracking-widest mt-0.5">Neon Arena</p>
                                 </div>
                                 <span className="text-2xl">🛡️</span>
+                            </div>
+                        </button>
+
+                        <button 
+                            onClick={() => onSelect('tug-of-war')}
+                            className="group relative w-full p-4 rounded-2xl bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 hover:border-purple-500 transition-all text-left overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-10 transition-opacity" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p className="font-black text-sm text-white">Tug of War</p>
+                                    <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">Learning Engine</p>
+                                </div>
+                                <span className="text-2xl">🧠</span>
                             </div>
                         </button>
                     </div>

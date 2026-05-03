@@ -42,6 +42,14 @@ const SCENES: Record<string, SceneConfig> = {
     scale: SCALES.mystic,
     wave: 'sawtooth',
     lpf: 1000
+  },
+  'tug-of-war': {
+    bpm: 132,
+    melody: [0, 4, 5, 4, 0, 3, 4, 3, 0, 2, 3, 2, 0, 1, 2, 1],
+    bass: [0, 1, 0, 1],
+    scale: SCALES.mystic,
+    wave: 'sawtooth',
+    lpf: 1300
   }
 };
 
@@ -87,7 +95,7 @@ class MusicEngine {
   }
 
   setScene(scene: keyof typeof SCENES) {
-    if (this._scene === scene) return;
+    if (this._scene === scene || !SCENES[scene]) return;
     this._scene = scene;
     // Reset index for clean start if switching
     this._noteIdx = 0;
@@ -149,8 +157,8 @@ class MusicEngine {
       this._tone(freq, t, b * 0.85, 0.12, config.wave);
 
       // ── Harmony (intense or specific duel layer) ─────────────────────────
-      if (this._intense || this._scene === 'number-duel') {
-        const harm = this._scene === 'number-duel' ? 1.25 : 1.5; // perfect 4th or 5th
+      if (this._intense || this._scene === 'number-duel' || this._scene === 'tug-of-war') {
+        const harm = (this._scene === 'number-duel' || this._scene === 'tug-of-war') ? 1.25 : 1.5; 
         this._tone(freq * harm, t, b * 0.85, 0.05, 'sine');
       }
 
