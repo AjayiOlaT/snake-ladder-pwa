@@ -8,6 +8,31 @@ import { music } from '../../../../lib/music';
 import Rope from '../../../../components/TugOfWar/Rope';
 import QuestionArena from '../../../../components/TugOfWar/QuestionArena';
 
+interface TugOfWarConfig {
+    subject: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+}
+
+interface TugOfWarMatch {
+    id: string;
+    status: 'waiting' | 'active' | 'finished';
+    p1_id: string;
+    p2_id: string | null;
+    rope_pos: number;
+    p1_config: TugOfWarConfig;
+    p2_config: TugOfWarConfig | null;
+    join_code: string;
+    winner_id: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+interface Profile {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+}
+
 export default function TugOfWarGame() {
     const params = useParams();
     const matchId = params.matchId as string;
@@ -15,14 +40,14 @@ export default function TugOfWarGame() {
     const [supabase] = useState(() => createClient());
     
     const [user, setUser] = useState<any>(null);
-    const [match, setMatch] = useState<any>(null);
+    const [match, setMatch] = useState<TugOfWarMatch | null>(null);
     const [questions, setQuestions] = useState<any[]>([]);
-    const [opponentProfile, setOpponentProfile] = useState<any>(null);
-    const [myProfile, setMyProfile] = useState<any>(null);
+    const [opponentProfile, setOpponentProfile] = useState<Profile | null>(null);
+    const [myProfile, setMyProfile] = useState<Profile | null>(null);
     const [isMuted, setIsMuted] = useState(false);
     
     // Friends & Invite
-    const [friends, setFriends] = useState<any[]>([]);
+    const [friends, setFriends] = useState<Profile[]>([]);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [invitingId, setInvitingId] = useState<string | null>(null);
 
@@ -103,7 +128,7 @@ export default function TugOfWarGame() {
                 table: 'tug_of_war_matches', 
                 filter: `id=eq.${matchId}` 
             }, (payload) => {
-                const newMatch = payload.new as any;
+                const newMatch = payload.new as TugOfWarMatch;
                 console.log('🎯 Arena Update:', newMatch.rope_pos, newMatch.status);
                 
                 setMatch(prev => {
