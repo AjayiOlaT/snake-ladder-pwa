@@ -48,7 +48,7 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
     if (!currentQuestion) return <div className="text-slate-500 font-bold uppercase tracking-widest text-xs">Waiting for neural feed...</div>;
 
     return (
-        <div className="w-full max-w-xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
+        <div className="w-full max-w-xl bg-white/90 backdrop-blur-xl border-4 border-white rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
             <AnimatePresence mode="wait">
                 <motion.div 
                     key={currentQuestion.id}
@@ -58,11 +58,11 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
                     className="flex flex-col gap-6"
                 >
                     <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Question {currentIndex + 1}</span>
-                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Power: x{multiplier.toFixed(1)}</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question {currentIndex + 1}</span>
+                        <span className="text-[10px] font-black text-sky-600 uppercase tracking-widest">Power: x{multiplier.toFixed(1)}</span>
                     </div>
 
-                    <h2 className="text-xl md:text-2xl font-bold text-white leading-relaxed">
+                    <h2 className="text-xl md:text-2xl font-black text-slate-800 leading-relaxed">
                         {currentQuestion.question_text}
                     </h2>
 
@@ -73,10 +73,10 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
                                 onClick={() => handleAnswer(option)}
                                 disabled={disabled || cooldown}
                                 className={`
-                                    relative p-4 rounded-2xl border transition-all text-left font-bold text-sm
+                                    relative p-5 rounded-2xl border-2 transition-all text-left font-black text-sm shadow-sm
                                     ${selectedOption === option 
-                                        ? (isCorrect ? 'bg-teal-500/20 border-teal-500 text-teal-400' : 'bg-rose-500/20 border-rose-500 text-rose-400')
-                                        : 'bg-white/5 border-white/5 hover:border-white/20 text-slate-300'
+                                        ? (isCorrect ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700')
+                                        : 'bg-slate-50 border-slate-100 hover:border-sky-400 text-slate-600'
                                     }
                                 `}
                             >
@@ -85,7 +85,7 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
                                     <motion.div 
                                         initial={{ scale: 0 }} 
                                         animate={{ scale: 1 }} 
-                                        className="absolute top-2 right-2"
+                                        className="absolute top-2 right-2 text-lg"
                                     >
                                         {isCorrect ? '✅' : '❌'}
                                     </motion.div>
@@ -96,10 +96,10 @@ export default function QuestionArena({ questions, onCorrect, multiplier, disabl
                 </motion.div>
             </AnimatePresence>
 
-            {/* Neural Progress Bar */}
-            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+            {/* Fun Progress Bar */}
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <motion.div 
-                    className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                    className="h-full bg-gradient-to-r from-sky-400 to-blue-500"
                     initial={{ width: '0%' }}
                     animate={{ width: `${((currentIndex % questions.length) / questions.length) * 100}%` }}
                 />

@@ -218,25 +218,18 @@ export default function TugOfWarGame() {
     const myConfig = isP1 ? match.p1_config : match.p2_config;
 
     return (
-        <div className="min-h-screen bg-[#020408] text-white overflow-hidden relative">
-            {/* War Atmosphere Background */}
-            <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(20,20,30,1)_0%,_rgba(2,4,8,1)_100%)] pointer-events-none" />
-            <div className="fixed inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none" />
-
-            {/* Main Game Container with Shake */}
+        <div className="min-h-screen bg-sky-400 text-slate-900 overflow-hidden relative">
+            {/* Park Atmosphere Background */}
+            <div className="fixed inset-0 bg-gradient-to-b from-sky-400 via-sky-300 to-green-100 pointer-events-none" />
+            
+            {/* Main Game Container */}
             <motion.div 
-                className="relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-12 flex flex-col gap-8 md:gap-16 items-center"
-                animate={shake ? {
-                    x: [0, -10, 10, -10, 10, 0],
-                    y: [0, 5, -5, 5, -5, 0],
-                } : {}}
-                transition={{ duration: 0.3 }}
-                key={shake}
+                className="relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-12 flex flex-col gap-6 md:gap-10 items-center"
             >
-                <nav className="w-full flex justify-between items-center">
+                <nav className="w-full flex justify-between items-center bg-white/20 backdrop-blur-md p-4 rounded-3xl border border-white/40 shadow-lg">
                 <div className="flex flex-col">
-                    <h2 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em]">Neural Tug-of-War</h2>
-                    <h1 className="text-xl font-black italic tracking-tighter uppercase">Arena 01</h1>
+                    <h2 className="text-[10px] font-black text-sky-700 uppercase tracking-[0.3em]">Park Play</h2>
+                    <h1 className="text-xl font-black italic tracking-tighter uppercase text-slate-800">The Sunny Arena</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <button onClick={toggleMute} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
@@ -261,23 +254,23 @@ export default function TugOfWarGame() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="w-full max-w-lg flex flex-col items-center text-center gap-6 p-8 md:p-12 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[3rem]"
+                            className="w-full max-w-lg flex flex-col items-center text-center gap-6 p-8 md:p-12 bg-white/40 backdrop-blur-2xl border-4 border-white/60 rounded-[3rem] shadow-2xl"
                         >
-                            <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center text-4xl animate-pulse">📡</div>
+                            <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-4xl animate-bounce shadow-lg">🎈</div>
                             <div>
-                                <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-2">Awaiting Challenger</h2>
-                                <p className="text-slate-400 text-sm font-medium mb-8">Stabilize the bridge by sharing the code or inviting a friend.</p>
+                                <h2 className="text-3xl font-black italic uppercase tracking-tighter mb-2 text-slate-800">Waiting for a Friend</h2>
+                                <p className="text-slate-600 text-sm font-medium mb-8">Tell your friend to enter this secret playground code!</p>
                                 
-                                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 mb-8">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Arena Access Code</p>
-                                    <p className="text-5xl font-black font-mono tracking-[0.2em] text-white">{match.join_code}</p>
+                                <div className="bg-white/60 border-2 border-green-200 rounded-3xl p-6 mb-8 shadow-inner">
+                                    <p className="text-[10px] font-black text-green-700 uppercase tracking-widest mb-2">Secret Playground Code</p>
+                                    <p className="text-5xl font-black font-mono tracking-[0.2em] text-slate-800">{match.join_code}</p>
                                 </div>
 
                                 <button 
                                     onClick={() => setShowInviteModal(true)}
-                                    className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-95"
                                 >
-                                    <span>👥</span> Invite Friend
+                                    <span>👋</span> Invite a Buddy
                                 </button>
                             </div>
                         </motion.div>
@@ -286,50 +279,50 @@ export default function TugOfWarGame() {
                             key="finished"
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="w-full max-w-2xl flex flex-col items-center text-center gap-8 p-12 bg-white/5 backdrop-blur-3xl border border-white/20 rounded-[4rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden"
+                            className="w-full max-w-2xl flex flex-col items-center text-center gap-8 p-12 bg-white/60 backdrop-blur-3xl border-4 border-white rounded-[4rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] relative overflow-hidden"
                         >
-                            {/* Decorative Glows */}
-                            <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 blur-[80px] opacity-40 ${match.winner_id === user.id ? 'bg-teal-500' : 'bg-rose-500'}`} />
+                            {/* Decorative Sunburst */}
+                            <div className={`absolute -top-20 -left-20 w-64 h-64 blur-[80px] opacity-30 rounded-full ${match.winner_id === user.id ? 'bg-yellow-400' : 'bg-red-400'}`} />
                             
                             <div className="relative z-10">
                                 <motion.div 
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.2 }}
-                                    className="text-8xl mb-4 filter drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                                    className="text-8xl mb-4"
                                 >
-                                    {match.winner_id === user.id ? '🏆' : '💀'}
+                                    {match.winner_id === user.id ? '🍦' : '🎈'}
                                 </motion.div>
-                                <h2 className="text-5xl font-black italic uppercase tracking-tighter text-white mb-2 leading-none">
-                                    {match.winner_id === user.id ? 'Neural Victory' : 'Connection Lost'}
+                                <h2 className="text-5xl font-black italic uppercase tracking-tighter text-slate-800 mb-2 leading-none">
+                                    {match.winner_id === user.id ? 'Yay! You Won!' : 'Good Try Buddy!'}
                                 </h2>
-                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px] mb-8">Match Protocol Terminated</p>
+                                <p className="text-green-700 font-black uppercase tracking-[0.3em] text-[10px] mb-8">Fun match protocol complete!</p>
 
                                 <div className="grid grid-cols-2 gap-4 w-full mb-8">
-                                    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Final Force</span>
-                                        <span className="text-3xl font-black font-mono text-purple-400">{Math.abs(match.rope_pos).toFixed(1)}</span>
-                                        <span className="text-[8px] font-bold text-slate-600 mt-1 uppercase">Pascals</span>
+                                    <div className="bg-white/40 border-2 border-white/60 rounded-3xl p-6 flex flex-col items-center shadow-sm">
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Tug Strength</span>
+                                        <span className="text-3xl font-black font-mono text-green-600">{Math.abs(match.rope_pos).toFixed(0)}</span>
+                                        <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Points</span>
                                     </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center">
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Impact Rank</span>
-                                        <span className="text-3xl font-black font-mono text-indigo-400">{match.winner_id === user.id ? 'A+' : 'C-'}</span>
-                                        <span className="text-[8px] font-bold text-slate-600 mt-1 uppercase">Evaluation</span>
+                                    <div className="bg-white/40 border-2 border-white/60 rounded-3xl p-6 flex flex-col items-center shadow-sm">
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Play Rank</span>
+                                        <span className="text-3xl font-black font-mono text-blue-500">{match.winner_id === user.id ? 'S+' : 'A'}</span>
+                                        <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Awesome</span>
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row gap-4 w-full">
                                     <button 
                                         onClick={() => router.push('/arcade')}
-                                        className="flex-1 py-5 bg-white text-slate-950 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:scale-[1.05] active:scale-95 transition-all shadow-2xl"
+                                        className="flex-1 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:scale-[1.05] active:scale-95 transition-all shadow-xl"
                                     >
-                                        Return to Hub
+                                        Go to Map
                                     </button>
                                     <button 
                                         onClick={() => router.push('/games/tug-of-war/lobby')}
-                                        className="flex-1 py-5 bg-white/5 border border-white/10 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all"
+                                        className="flex-1 py-5 bg-white border-2 border-slate-200 text-slate-800 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-slate-50 transition-all shadow-md"
                                     >
-                                        New Arena
+                                        Play Again
                                     </button>
                                 </div>
                             </div>
@@ -382,34 +375,34 @@ export default function TugOfWarGame() {
             {/* Invite Modal */}
             <AnimatePresence>
                 {showInviteModal && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-xl">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm bg-white/5 border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-green-900/40 backdrop-blur-xl">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm bg-white border-4 border-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4">
-                                <button onClick={() => setShowInviteModal(false)} className="text-slate-500 hover:text-white transition-colors text-xl font-black">×</button>
+                                <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-slate-800 transition-colors text-2xl font-black">×</button>
                             </div>
                             
                             <div className="text-center space-y-6">
                                 <div className="space-y-2">
-                                    <p className="text-purple-500 font-black text-[10px] uppercase tracking-[0.3em]">Arena Recruitment</p>
-                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase">Invite Challenger</h3>
-                                    <p className="text-slate-500 text-xs font-medium">Challenge a friend to this arena.</p>
+                                    <p className="text-green-500 font-black text-[10px] uppercase tracking-[0.3em]">Playground Invite</p>
+                                    <h3 className="text-2xl font-black italic tracking-tighter uppercase text-slate-800">Find a Buddy</h3>
+                                    <p className="text-slate-500 text-xs font-medium">Invite a friend to play in the park!</p>
                                 </div>
 
                                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                                     {friends.length === 0 ? (
-                                        <p className="text-slate-600 text-[10px] uppercase font-black py-8">No Neural Connections Found</p>
+                                        <p className="text-slate-400 text-[10px] uppercase font-black py-8">No Buddies Online</p>
                                     ) : friends.map(f => (
-                                        <div key={f.id} className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/5">
+                                        <div key={f.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border-2 border-slate-100">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-xs font-black text-purple-400 uppercase">
+                                                <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center text-xs font-black text-white uppercase">
                                                     {f.username?.[0] || '?'}
                                                 </div>
-                                                <span className="text-xs font-bold truncate max-w-[120px]">{f.username}</span>
+                                                <span className="text-xs font-bold truncate max-w-[120px] text-slate-800">{f.username}</span>
                                             </div>
                                             <button 
                                                 onClick={() => sendInvite(f.id)}
                                                 disabled={invitingId === f.id}
-                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${invitingId === f.id ? 'bg-teal-500 text-white' : 'bg-white/10 hover:bg-white text-slate-950'}`}
+                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${invitingId === f.id ? 'bg-blue-500 text-white' : 'bg-slate-900 text-white hover:scale-[1.05]'}`}
                                             >
                                                 {invitingId === f.id ? 'Sent ✓' : 'Invite'}
                                             </button>
