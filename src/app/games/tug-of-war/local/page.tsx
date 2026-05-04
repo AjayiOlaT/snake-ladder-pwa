@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { createClient } from '../../../../lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { music } from '../../../../lib/music';
 import Rope from '../../../../components/TugOfWar/Rope';
 import QuestionArena from '../../../../components/TugOfWar/QuestionArena';
+import { ScreenShake } from '../../../../components/TugOfWar/TugEffects';
 
 export default function LocalTugOfWar() {
     return (
@@ -52,6 +53,8 @@ function LocalArenaContent() {
         }
     };
 
+    const shakeRef = useRef<any>(null);
+
     const handlePull = (player: 1 | 2) => {
         if (status !== 'active') return;
 
@@ -72,6 +75,11 @@ function LocalArenaContent() {
             return next;
         });
 
+        // Trigger Screen Shake based on difficulty multiplier
+        if (shakeRef.current) {
+            shakeRef.current.shake(multiplier);
+        }
+
         music.playMoveSound();
     };
 
@@ -82,69 +90,71 @@ function LocalArenaContent() {
             {/* Subtle Gradient Background */}
             <div className="fixed inset-0 bg-gradient-to-b from-md-primary/5 via-md-surface to-md-surface pointer-events-none" />
             
-            {/* Main Game Container */}
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4 items-center h-screen overflow-hidden">
-                
-                {/* Header */}
-                <nav className="w-full flex justify-between items-center bg-md-surface/40 backdrop-blur-md p-4 md:p-6 rounded-[2.5rem] border border-md-outline/10 shadow-sm shrink-0">
-                    <div className="flex flex-col">
-                        <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-md-secondary-container text-md-on-secondary-container rounded-full text-[9px] font-bold uppercase tracking-wider mb-1 w-fit">
-                            <span>Local Duel</span>
+            {/* Main Game Container wrapped in ScreenShake */}
+            <ScreenShake ref={shakeRef}>
+                <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4 items-center h-screen overflow-hidden">
+                    
+                    {/* Header */}
+                    <nav className="w-full flex justify-between items-center bg-md-surface/40 backdrop-blur-md p-4 md:p-6 rounded-[2.5rem] border border-md-outline/10 shadow-sm shrink-0">
+                        <div className="flex flex-col">
+                            <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-md-secondary-container text-md-on-secondary-container rounded-full text-[9px] font-bold uppercase tracking-wider mb-1 w-fit">
+                                <span>Local Duel</span>
+                            </div>
+                            <h1 className="text-lg md:text-xl font-bold tracking-tight text-md-on-surface">The Rope Battle</h1>
                         </div>
-                        <h1 className="text-lg md:text-xl font-bold tracking-tight text-md-on-surface">The Rope Battle</h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button onClick={toggleMute} className="w-12 h-12 rounded-full bg-md-surface-variant/30 flex items-center justify-center hover:bg-md-surface-variant/50 transition-colors">
-                            <span className="text-xl">{isMuted ? '󰝟' : '󰕾'}</span>
-                        </button>
-                        <button onClick={() => setShowQuitConfirm(true)} className="px-4 py-2 bg-md-error/10 text-md-error rounded-full text-[10px] font-bold uppercase tracking-wider hover:bg-md-error hover:text-white transition-all">
-                            Exit
-                        </button>
-                    </div>
-                </nav>
+                        <div className="flex items-center gap-3">
+                            <button onClick={toggleMute} className="w-12 h-12 rounded-full bg-md-surface-variant/30 flex items-center justify-center hover:bg-md-surface-variant/50 transition-colors">
+                                <span className="text-xl">{isMuted ? '󰝟' : '󰕾'}</span>
+                            </button>
+                            <button onClick={() => setShowQuitConfirm(true)} className="px-4 py-2 bg-md-error/10 text-md-error rounded-full text-[10px] font-bold uppercase tracking-wider hover:bg-md-error hover:text-white transition-all">
+                                Exit
+                            </button>
+                        </div>
+                    </nav>
 
-                {/* The Rope */}
-                <div className="w-full max-w-5xl shrink-0 px-4 scale-95 md:scale-100">
-                    <Rope position={ropePos} />
+                    {/* The Rope */}
+                    <div className="w-full max-w-5xl shrink-0 px-4 scale-95 md:scale-100">
+                        <Rope position={ropePos} />
+                    </div>
+
+                    {/* DUAL ARENAS */}
+                    <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 overflow-hidden pb-6">
+                        {/* Player 1 (Left/Top) */}
+                        <div className="flex flex-col gap-2 items-center">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-md-primary/10 rounded-full border border-md-primary/10">
+                                <div className="w-5 h-5 rounded-full bg-md-primary text-md-on-primary flex items-center justify-center text-[9px] font-bold">1</div>
+                                <span className="font-bold uppercase tracking-wider text-[9px] text-md-primary">Player One</span>
+                            </div>
+                            <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-[2.5rem]">
+                                <QuestionArena 
+                                    questions={questions.slice(0, questions.length / 2)}
+                                    onCorrect={() => handlePull(1)}
+                                    multiplier={multiplier}
+                                    disabled={status !== 'active'}
+                                    compact
+                                />
+                            </div>
+                        </div>
+
+                        {/* Player 2 (Right/Bottom) */}
+                        <div className="flex flex-col gap-2 items-center">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-md-secondary/10 rounded-full border border-md-secondary/10">
+                                <div className="w-5 h-5 rounded-full bg-md-secondary text-md-on-secondary flex items-center justify-center text-[9px] font-bold">2</div>
+                                <span className="font-bold uppercase tracking-wider text-[9px] text-md-secondary">Player Two</span>
+                            </div>
+                            <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-[2.5rem]">
+                                <QuestionArena 
+                                    questions={questions.slice(questions.length / 2)}
+                                    onCorrect={() => handlePull(2)}
+                                    multiplier={multiplier}
+                                    disabled={status !== 'active'}
+                                    compact
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                {/* DUAL ARENAS */}
-                <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 overflow-hidden pb-6">
-                    {/* Player 1 (Left/Top) */}
-                    <div className="flex flex-col gap-2 items-center">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-md-primary/10 rounded-full border border-md-primary/10">
-                            <div className="w-5 h-5 rounded-full bg-md-primary text-md-on-primary flex items-center justify-center text-[9px] font-bold">1</div>
-                            <span className="font-bold uppercase tracking-wider text-[9px] text-md-primary">Player One</span>
-                        </div>
-                        <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-[2.5rem]">
-                            <QuestionArena 
-                                questions={questions.slice(0, questions.length / 2)}
-                                onCorrect={() => handlePull(1)}
-                                multiplier={multiplier}
-                                disabled={status !== 'active'}
-                                compact
-                            />
-                        </div>
-                    </div>
-
-                    {/* Player 2 (Right/Bottom) */}
-                    <div className="flex flex-col gap-2 items-center">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-md-secondary/10 rounded-full border border-md-secondary/10">
-                            <div className="w-5 h-5 rounded-full bg-md-secondary text-md-on-secondary flex items-center justify-center text-[9px] font-bold">2</div>
-                            <span className="font-bold uppercase tracking-wider text-[9px] text-md-secondary">Player Two</span>
-                        </div>
-                        <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-[2.5rem]">
-                            <QuestionArena 
-                                questions={questions.slice(questions.length / 2)}
-                                onCorrect={() => handlePull(2)}
-                                multiplier={multiplier}
-                                disabled={status !== 'active'}
-                                compact
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </ScreenShake>
 
             {/* Victory Modal */}
             <AnimatePresence>
@@ -222,5 +232,4 @@ function LocalArenaContent() {
             </AnimatePresence>
         </div>
     );
-
 }

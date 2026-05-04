@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { music } from '../../../../lib/music';
 import Rope from '../../../../components/TugOfWar/Rope';
 import QuestionArena from '../../../../components/TugOfWar/QuestionArena';
+import { ScreenShake } from '../../../../components/TugOfWar/TugEffects';
 
 interface TugOfWarConfig {
     subject: string;
@@ -114,7 +115,7 @@ export default function TugOfWarGame() {
         })();
     }, [matchId, supabase, router]);
 
-    const [shake, setShake] = useState(0);
+    const shakeRef = useRef<any>(null);
 
     // Stabilized Real-time Sync
     useEffect(() => {
@@ -136,7 +137,7 @@ export default function TugOfWarGame() {
                 setMatch(prev => {
                     // Trigger shake if rope moved
                     if (prev && prev.rope_pos !== newMatch.rope_pos) {
-                        setShake(s => s + 1);
+                        if (shakeRef.current) shakeRef.current.shake(1.5);
                     }
                     return newMatch;
                 });
@@ -195,7 +196,7 @@ export default function TugOfWarGame() {
             console.error('❌ Pull failed:', error.message);
         } else {
             music.playMoveSound();
-            setShake(s => s + 1); // Local feedback
+            if (shakeRef.current) shakeRef.current.shake(impact);
         }
     };
 
@@ -224,9 +225,10 @@ export default function TugOfWarGame() {
             <div className="fixed inset-0 bg-gradient-to-b from-md-primary/5 via-md-surface to-md-surface pointer-events-none" />
             
             {/* Main Game Container */}
-            <motion.div 
-                className="relative z-10 max-w-5xl mx-auto px-4 py-6 md:py-8 flex flex-col gap-8 md:gap-12 items-center"
-            >
+            <ScreenShake ref={shakeRef}>
+                <motion.div 
+                    className="relative z-10 max-w-5xl mx-auto px-4 py-6 md:py-8 flex flex-col gap-8 md:gap-12 items-center"
+                >
                 <nav className="w-full flex justify-between items-center bg-md-surface/40 backdrop-blur-md p-4 md:p-6 rounded-[2.5rem] border border-md-outline/10 shadow-sm">
                 <div className="flex flex-col">
                     <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-md-primary-container text-md-on-primary-container rounded-full text-[9px] font-bold uppercase tracking-wider mb-1 w-fit">
@@ -472,8 +474,7 @@ export default function TugOfWarGame() {
                 )}
             </AnimatePresence>
             </motion.div>
+            </ScreenShake>
         </div>
     );
-}
-
 }
