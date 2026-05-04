@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import Providers from "./Providers";
 import GlobalAudioController from "../components/GlobalMusicController";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
   title: "Neon Arena: Snake & Ladder",
@@ -29,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${inter.className} bg-slate-950 text-white min-h-screen antialiased`}>
+      <body suppressHydrationWarning className={`${inter.variable} ${outfit.variable} font-sans bg-background text-foreground min-h-screen antialiased transition-colors duration-300`}>
         <Providers>
           <GlobalAudioController />
           {children}

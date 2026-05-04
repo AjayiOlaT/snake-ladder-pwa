@@ -18,88 +18,104 @@ export default function Rope({ position }: RopeProps) {
     const smoothPos = useSpring(posValue, { stiffness: 60, damping: 20 });
     
     // Map -100..100 to movement
-    // Winner pulls back by 10%, Loser dragged forward by 25%.
-    const leftX = useTransform(smoothPos, (v) => v < 0 ? (v / 100) * 10 : (v / 100) * 35);
-    const rightX = useTransform(smoothPos, (v) => v > 0 ? (v / 100) * 10 : (v / 100) * 35);
+    // Winner pulls back by 15%, Loser dragged forward by 30%.
+    const leftX = useTransform(smoothPos, (v) => v < 0 ? (v / 100) * 15 : (v / 100) * 45);
+    const rightX = useTransform(smoothPos, (v) => v > 0 ? (v / 100) * 15 : (v / 100) * 45);
     const knotX = useTransform(smoothPos, (v) => `${((v + 100) / 200) * 100}%`);
 
     return (
-        <div className="w-full h-48 md:h-64 relative flex items-center justify-center overflow-visible mb-6 md:mb-12">
+        <div className="w-full h-40 md:h-52 relative flex items-center justify-center overflow-visible mb-4 md:mb-8">
             
-            {/* PARK BACKGROUND SCENERY */}
-            <div className="absolute inset-0 rounded-[2rem] md:rounded-[4rem] overflow-hidden shadow-2xl border-4 border-white/20">
-                <img src="/tug-of-war/park-bg.png" alt="Park" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-green-900/20" />
+            {/* STYLIZED BACKGROUND SCENERY */}
+            <div className="absolute inset-0 rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden bg-md-surface-variant/10 border border-md-outline/5 shadow-inner">
+                <div className="absolute inset-0 bg-gradient-to-br from-md-primary/5 via-transparent to-md-secondary/5" />
+                {/* Clean Horizon Line */}
+                <div className="absolute bottom-[30%] inset-x-0 h-px bg-md-outline/10" />
             </div>
 
-            {/* THE PLAYGROUND ROPE */}
+            {/* THE REAL BRAIDED ROPE */}
             <motion.div 
-                className="absolute h-4 md:h-6 z-10 rounded-full"
+                className="absolute h-3 md:h-4 z-10"
                 style={{
-                    left: useTransform(leftX, (v) => `calc(20% + ${v}%)`),
-                    right: useTransform(rightX, (v) => `calc(20% - ${v}%)`),
-                    backgroundColor: '#e6ccb2',
-                    backgroundImage: 'repeating-linear-gradient(45deg, #ddb892, #ddb892 10px, #b08968 10px, #b08968 20px)',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3)'
+                    left: useTransform(leftX, (v) => `calc(8% + ${v}%)`),
+                    right: useTransform(rightX, (v) => `calc(8% - ${v}%)`),
+                    background: `repeating-linear-gradient(
+                        -45deg,
+                        #d2b48c,
+                        #d2b48c 8px,
+                        #c4a484 8px,
+                        #c4a484 16px,
+                        #b08d57 16px,
+                        #b08d57 20px
+                    )`,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.2)',
+                    borderRadius: '2px'
                 }}
-            />
+            >
+                {/* Rope Texture Overlay */}
+                <div className="absolute inset-0 opacity-30 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/canvas-orange.png')]" />
+            </motion.div>
 
-            {/* FIXED CENTER MARKER (The Finish Line) */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-12 md:w-10 md:h-14 z-20 pointer-events-none">
-                <div className="w-full h-full bg-red-600 rounded-sm shadow-[0_0_20px_rgba(220,38,38,0.5)] border-2 border-red-400 opacity-90">
-                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-red-800/40" />
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-full bg-white/20" />
-                </div>
+            {/* FIXED CENTER MARKER */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 md:w-1.5 md:h-16 z-20 pointer-events-none bg-md-outline/20 rounded-full">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-md-error shadow-lg" />
             </div>
 
             {/* Player 1 (Kid Left) */}
             <motion.div 
-                className="absolute flex flex-col items-center gap-1 z-30"
-                style={{ left: useTransform(leftX, (v) => `calc(20% + ${v}%)`), translateX: '-50%' }}
+                className="absolute flex flex-col items-center gap-2 z-30"
+                style={{ left: useTransform(leftX, (v) => `calc(8% + ${v}%)`), translateX: '-50%' }}
                 animate={{ 
-                    rotate: position < 0 ? -8 : 4,
-                    scale: position < 0 ? 1.05 : 1,
+                    rotate: position < 0 ? -8 : 2,
+                    scale: position < 0 ? 1.02 : 0.95,
+                    y: position < 0 ? -2 : 0
                 }}
                 transition={{ type: 'spring', stiffness: 50, damping: 20 }}
             >
-                <div className="w-20 h-20 md:w-32 md:h-32 overflow-visible">
+                <div className="w-20 h-20 md:w-32 md:h-32 overflow-visible relative">
                     <img 
                         src="/tug-of-war/kid-left.png" 
                         alt="Kid 1" 
-                        className={`w-full h-full object-contain transition-all duration-700 ${position < 0 ? 'opacity-100' : 'opacity-70'}`}
-                        style={{ mixBlendMode: 'multiply', filter: 'contrast(1.3) brightness(1.1)' }}
+                        className={`w-full h-full object-contain transition-all duration-700 ${position < 0 ? 'drop-shadow-[0_10px_15px_rgba(0,0,0,0.2)]' : 'opacity-90 grayscale-[20%]'}`}
                     />
                 </div>
-                <div className={`px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-md transition-colors duration-500 ${position < 0 ? 'bg-yellow-400 text-slate-900' : 'bg-white/40 text-slate-600'}`}>
-                    {position < 0 ? 'PULLING!' : 'STAY STRONG!'}
+                <div className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm transition-all duration-500 ${position < 0 ? 'bg-md-primary text-white' : 'bg-md-surface-variant/50 text-md-on-surface-variant'}`}>
+                    {position < 0 ? 'Winning!' : 'Hold on!'}
                 </div>
             </motion.div>
 
             {/* Player 2 (Kid Right) */}
             <motion.div 
-                className="absolute flex flex-col items-center gap-1 z-30"
-                style={{ right: useTransform(rightX, (v) => `calc(20% - ${v}%)`), translateX: '50%' }}
+                className="absolute flex flex-col items-center gap-2 z-30"
+                style={{ right: useTransform(rightX, (v) => `calc(8% - ${v}%)`), translateX: '50%' }}
                 animate={{ 
-                    rotate: position > 0 ? 8 : -4,
-                    scale: position > 0 ? 1.05 : 1,
+                    rotate: position > 0 ? 8 : -2,
+                    scale: position > 0 ? 1.02 : 0.95,
+                    y: position > 0 ? -2 : 0
                 }}
                 transition={{ type: 'spring', stiffness: 50, damping: 20 }}
             >
-                <div className="w-20 h-20 md:w-32 md:h-32 overflow-visible">
+                <div className="w-20 h-20 md:w-32 md:h-32 overflow-visible relative">
                     <img 
                         src="/tug-of-war/kid-right.png" 
                         alt="Kid 2" 
-                        className={`w-full h-full object-contain transition-all duration-700 ${position > 0 ? 'opacity-100' : 'opacity-70'}`}
-                        style={{ mixBlendMode: 'multiply', filter: 'contrast(1.3) brightness(1.1)' }}
+                        className={`w-full h-full object-contain transition-all duration-700 ${position > 0 ? 'drop-shadow-[0_10px_15px_rgba(0,0,0,0.2)]' : 'opacity-90 grayscale-[20%]'}`}
                     />
                 </div>
-                <div className={`px-3 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-md transition-colors duration-500 ${position > 0 ? 'bg-yellow-400 text-slate-900' : 'bg-white/40 text-slate-600'}`}>
-                    {position > 0 ? 'PULLING!' : 'STAY STRONG!'}
+                <div className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm transition-all duration-500 ${position > 0 ? 'bg-md-primary text-white' : 'bg-md-surface-variant/50 text-md-on-surface-variant'}`}>
+                    {position > 0 ? 'Winning!' : 'Hold on!'}
                 </div>
             </motion.div>
 
-            {/* Grass Overlay (Bottom) */}
-            <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-green-900/40 to-transparent pointer-events-none" />
+            {/* Shadows under kids */}
+            <motion.div 
+                className="absolute bottom-6 left-0 w-16 h-2 bg-black/10 blur-md rounded-full -z-10"
+                style={{ left: useTransform(leftX, (v) => `calc(8% + ${v}%)`), translateX: '-50%' }}
+            />
+            <motion.div 
+                className="absolute bottom-6 right-0 w-16 h-2 bg-black/10 blur-md rounded-full -z-10"
+                style={{ right: useTransform(rightX, (v) => `calc(8% - ${v}%)`), translateX: '50%' }}
+            />
         </div>
     );
 }

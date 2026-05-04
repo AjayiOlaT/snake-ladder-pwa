@@ -151,67 +151,70 @@ function LobbyContent() {
     if (!user) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading Command Center...</div>;
 
     return (
-       <main className="flex flex-col items-center justify-center min-h-screen relative p-4 bg-slate-950 overflow-hidden">
-          {/* Neural Bridge Overlay */}
+       <main className="flex flex-col items-center justify-center min-h-screen relative p-4 bg-md-surface overflow-hidden">
+          {/* Material Loading Overlay */}
           <AnimatePresence>
             {isEstablishing && (
                 <motion.div 
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-2xl"
+                    className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-md-surface/80 backdrop-blur-xl"
                 >
                     <div className="relative">
-                        <div className="w-32 h-32 rounded-full border-t-2 border-purple-500 animate-spin" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-24 h-24 rounded-full border-b-2 border-indigo-500 animate-spin-slow" />
-                        </div>
+                        <div className="w-16 h-16 rounded-full border-4 border-md-primary/20 border-t-md-primary animate-spin" />
                     </div>
                     <motion.div 
-                        initial={{ y: 20, opacity: 0 }} 
+                        initial={{ y: 10, opacity: 0 }} 
                         animate={{ y: 0, opacity: 1 }} 
-                        className="mt-8 text-center"
+                        className="mt-6 text-center"
                     >
-                        <h2 className="text-2xl font-black italic tracking-tighter text-white mb-2 uppercase">Initializing Rope Tension</h2>
-                        <p className="text-purple-400 font-black text-[10px] tracking-[0.5em] uppercase animate-pulse">Syncing Question Engine...</p>
+                        <h2 className="text-xl font-semibold text-md-on-surface mb-1">Setting up the Arena</h2>
+                        <p className="text-md-primary font-bold text-[10px] tracking-widest uppercase animate-pulse">Syncing Question Engine</p>
                     </motion.div>
                 </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Background aesthetics */}
+          {/* Subtle Background Accents */}
           <div className="fixed inset-0 pointer-events-none z-0">
-             <div className="absolute top-[10%] left-[10%] w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[150px]" />
-             <div className="absolute top-[40%] right-[10%] w-[300px] h-[300px] bg-indigo-500/20 rounded-full blur-[150px]" />
+             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-md-primary/5 rounded-full blur-[120px]" />
+             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-md-secondary/5 rounded-full blur-[120px]" />
           </div>
 
-          <div className="z-10 w-full max-w-4xl flex flex-col pt-4 pb-12 px-4 md:px-0">
+          <div className="z-10 w-full max-w-5xl flex flex-col pt-8 pb-16 px-4">
               
               {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0 mb-6 sm:mb-8">
-                  <div>
-                     <h2 className="text-[10px] sm:text-xs text-purple-400 font-black tracking-[0.3em] uppercase mb-0.5">Physical Intelligence</h2>
-                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 italic tracking-tighter">
-                         TUG OF WAR
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-12">
+                  <div className="space-y-1">
+                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-md-primary-container text-md-on-primary-container rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        <span>Physical Intelligence</span>
+                     </div>
+                     <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-md-on-surface">
+                         Tug of War
                      </h1>
                   </div>
                   
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto text-left sm:text-right bg-white/5 sm:bg-transparent p-3 sm:p-0 rounded-2xl sm:rounded-none border sm:border-0 border-white/5">
-                      <button onClick={() => router.push('/arcade')} className="text-xs text-slate-400 hover:text-white font-bold uppercase tracking-widest transition-colors mb-2">
-                          ← Back to Arcade
-                      </button>
-                      <button onClick={() => router.push('/games/tug-of-war/questions')} className="text-[10px] text-purple-400 hover:text-purple-300 font-black uppercase tracking-widest transition-colors mb-2">
-                          Manage Questions ⚙️
-                      </button>
-                      <p className="text-white font-bold text-xs sm:text-base truncate">{user?.user_metadata?.full_name || user?.email}</p>
-                      <button onClick={() => setShowRules(true)} className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors mt-2">
-                          View Rules
-                      </button>
+                  <div className="flex flex-col items-start sm:items-end gap-3">
+                      <div className="flex gap-4">
+                          <button onClick={() => router.push('/arcade')} className="text-xs font-bold text-md-outline hover:text-md-primary transition-colors flex items-center gap-1">
+                              ← Back to Arcade
+                          </button>
+                          <button onClick={() => router.push('/games/tug-of-war/questions')} className="text-xs font-bold text-md-primary hover:underline flex items-center gap-1">
+                              Manage Questions ⚙️
+                          </button>
+                      </div>
+                      <div className="flex flex-col items-start sm:items-end">
+                          <p className="text-md-on-surface font-semibold text-sm">{user?.user_metadata?.full_name || user?.email}</p>
+                          <button onClick={() => setShowRules(true)} className="text-[10px] font-bold uppercase tracking-wider text-md-outline hover:text-md-primary transition-colors">
+                              How to Play
+                          </button>
+                      </div>
                   </div>
               </div>
 
               {errorMsg && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-100 text-center font-bold">
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-8 p-4 bg-md-error/10 border border-md-error/20 rounded-2xl text-md-error text-center font-medium text-sm">
                       {errorMsg}
                   </motion.div>
               )}
@@ -220,24 +223,23 @@ function LobbyContent() {
                 {gameMode === 'selection' ? (
                   <motion.div 
                     key="selection"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
                     className="grid md:grid-cols-2 gap-8"
                   >
                       {/* LOCAL DUEL CARD */}
                       <button 
                         onClick={() => setGameMode('local')}
-                        className="group relative h-80 bg-white/5 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center hover:border-sky-500/50 transition-all overflow-hidden"
+                        className="group relative bg-md-surface-variant/20 border border-md-outline/10 rounded-[2.5rem] p-10 flex flex-col items-center text-center hover:bg-md-primary/5 hover:border-md-primary/30 transition-all duration-300"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-b from-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="w-24 h-24 rounded-3xl bg-sky-500/20 flex items-center justify-center text-5xl mb-6 shadow-inner border border-sky-500/30 group-hover:scale-110 transition-transform">
+                        <div className="w-24 h-24 rounded-[2rem] bg-md-primary-container text-md-on-primary-container flex items-center justify-center text-5xl mb-8 group-hover:scale-110 transition-transform duration-500 shadow-sm">
                             📱
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">Local Duel</h2>
-                        <p className="text-slate-400 font-medium text-sm max-w-[200px]">Two players, one device. Face-to-face battle!</p>
+                        <h2 className="text-3xl font-bold text-md-on-surface mb-3">Local Duel</h2>
+                        <p className="text-md-on-surface-variant text-sm max-w-[240px] leading-relaxed">Face off against a friend on this very device. Direct battle!</p>
                         
-                        <div className="mt-8 px-8 py-3 bg-sky-500 rounded-full text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-sky-500/40 hover:bg-sky-600 transition-colors">
+                        <div className="mt-10 px-10 py-4 bg-md-primary rounded-full text-md-on-primary font-bold text-sm shadow-lg shadow-md-primary/20 group-hover:shadow-md-primary/40 transition-all">
                             Setup Arena
                         </div>
                       </button>
@@ -245,16 +247,15 @@ function LobbyContent() {
                       {/* ONLINE WAR CARD */}
                       <button 
                         onClick={() => setGameMode('online')}
-                        className="group relative h-80 bg-white/5 border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center hover:border-purple-500/50 transition-all overflow-hidden"
+                        className="group relative bg-md-surface-variant/20 border border-md-outline/10 rounded-[2.5rem] p-10 flex flex-col items-center text-center hover:bg-md-secondary/5 hover:border-md-secondary/30 transition-all duration-300"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="w-24 h-24 rounded-3xl bg-purple-500/20 flex items-center justify-center text-5xl mb-6 shadow-inner border border-purple-500/30 group-hover:scale-110 transition-transform">
+                        <div className="w-24 h-24 rounded-[2rem] bg-md-secondary-container text-md-on-secondary-container flex items-center justify-center text-5xl mb-8 group-hover:scale-110 transition-transform duration-500 shadow-sm">
                             🌍
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">Online War</h2>
-                        <p className="text-slate-400 font-medium text-sm max-w-[200px]">Invite a friend or join a remote arena.</p>
+                        <h2 className="text-3xl font-bold text-md-on-surface mb-3">Online War</h2>
+                        <p className="text-md-on-surface-variant text-sm max-w-[240px] leading-relaxed">Challenge someone anywhere in the world. Remote warfare!</p>
                         
-                        <div className="mt-8 px-8 py-3 bg-purple-500 rounded-full text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-purple-500/40 hover:bg-purple-600 transition-colors">
+                        <div className="mt-10 px-10 py-4 bg-md-secondary rounded-full text-md-on-secondary font-bold text-sm shadow-lg shadow-md-secondary/20 group-hover:shadow-md-secondary/40 transition-all">
                             Enter Lobby
                         </div>
                       </button>
@@ -265,26 +266,24 @@ function LobbyContent() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="flex flex-col gap-6 items-center"
+                    className="flex flex-col gap-8 items-center"
                   >
                     <button 
                         onClick={() => setGameMode('selection')}
-                        className="self-start text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2"
+                        className="self-start text-[10px] font-bold uppercase tracking-widest text-md-outline hover:text-md-primary transition-colors flex items-center gap-2"
                     >
                         ← Back to Mode Selection
                     </button>
 
-                    <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 flex flex-col shadow-2xl relative overflow-hidden group hover:border-sky-500/50 transition-colors">
-                        <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        
+                    <div className="w-full max-w-xl bg-md-surface border border-md-outline/10 rounded-[2.5rem] p-10 md:p-14 flex flex-col shadow-xl relative overflow-hidden">
                         <div className="relative z-10 text-center">
-                            <div className="w-20 h-20 rounded-3xl bg-sky-500/20 mx-auto flex items-center justify-center text-4xl mb-6 shadow-inner border border-sky-500/30">
+                            <div className="w-20 h-20 rounded-3xl bg-md-primary/10 mx-auto flex items-center justify-center text-4xl mb-8 border border-md-primary/20">
                                 ⚔️
                             </div>
-                            <h2 className="text-2xl font-black text-white mb-2 uppercase italic tracking-tight">Arena Setup</h2>
-                            <p className="text-slate-400 font-medium text-xs mb-8">Choose your weapons for the local duel.</p>
+                            <h2 className="text-3xl font-bold text-md-on-surface mb-2">Arena Setup</h2>
+                            <p className="text-md-on-surface-variant text-sm mb-12">Configure your local battle arena.</p>
                             
-                            <div className="space-y-8 text-left mb-10">
+                            <div className="space-y-10 text-left mb-12">
                                 <CustomSelect 
                                     label="Subject Area"
                                     value={subject}
@@ -296,10 +295,10 @@ function LobbyContent() {
                                     ]}
                                 />
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duel Difficulty</label>
-                                    <div className="flex gap-2">
+                                    <label className="text-[10px] font-bold text-md-outline uppercase tracking-widest ml-1">Duel Difficulty</label>
+                                    <div className="flex gap-3">
                                         {['easy', 'medium', 'hard'].map(d => (
-                                            <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-3 rounded-2xl font-black border transition-all text-xs uppercase tracking-widest ${difficulty === d ? 'bg-sky-500 border-sky-400 text-white shadow-lg shadow-sky-500/20' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
+                                            <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-4 rounded-2xl font-bold border transition-all text-xs uppercase tracking-widest ${difficulty === d ? 'bg-md-primary border-md-primary text-white shadow-lg shadow-md-primary/20' : 'bg-md-surface-variant/20 border-md-outline/10 text-md-on-surface-variant hover:bg-md-surface-variant/40'}`}>
                                                 {d}
                                             </button>
                                         ))}
@@ -309,7 +308,7 @@ function LobbyContent() {
 
                             <button 
                                 onClick={handleStartLocalGame}
-                                className="w-full py-5 bg-gradient-to-r from-sky-500 to-indigo-600 rounded-2xl text-white font-black text-xl tracking-wider uppercase shadow-[0_0_30px_rgba(14,165,233,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="w-full py-6 bg-md-primary rounded-[2rem] text-md-on-primary font-bold text-lg tracking-wide shadow-xl shadow-md-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
                                 Start Duel
                             </button>
@@ -322,80 +321,73 @@ function LobbyContent() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="flex flex-col gap-6"
+                    className="flex flex-col gap-8"
                   >
                     <button 
                         onClick={() => setGameMode('selection')}
-                        className="self-start text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2"
+                        className="self-start text-[10px] font-bold uppercase tracking-widest text-md-outline hover:text-md-primary transition-colors flex items-center gap-2"
                     >
                         ← Back to Mode Selection
                     </button>
 
                     <div className="grid md:grid-cols-2 gap-8">
                         {/* HOST PANEL */}
-                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-purple-500/50 transition-colors">
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="bg-md-surface border border-md-outline/10 rounded-[2rem] p-8 md:p-10 flex flex-col shadow-lg hover:border-md-primary/30 transition-colors">
+                            <div className="w-14 h-14 rounded-2xl bg-md-primary/10 flex items-center justify-center text-3xl mb-6 border border-md-primary/20">
+                                🏗️
+                            </div>
+                            <h2 className="text-2xl font-bold text-md-on-surface mb-2">Host Match</h2>
+                            <p className="text-md-on-surface-variant text-xs mb-8">Create a new arena and share the code.</p>
                             
-                            <div className="relative z-10">
-                                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-purple-500/30">
-                                    🏗️
-                                </div>
-                                <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Host Match</h2>
-                                <p className="text-slate-400 font-medium text-[11px] mb-6">Create a rope arena and set your specialty.</p>
-                                
-                                <div className="space-y-6 mb-8">
-                                    <CustomSelect 
-                                        label="Subject Area"
-                                        value={subject}
-                                        onChange={setSubject}
-                                        options={[
-                                            { value: 'Math', label: 'Mathematics' },
-                                            { value: 'Science', label: 'Science (Coming Soon)', disabled: true },
-                                            { value: 'History', label: 'History (Coming Soon)', disabled: true }
-                                        ]}
-                                    />
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</label>
-                                        <div className="flex gap-2">
-                                            {['easy', 'medium', 'hard'].map(d => (
-                                                <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-xl font-black border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-purple-500 border-purple-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
-                                                    {d}
-                                                </button>
-                                            ))}
-                                        </div>
+                            <div className="space-y-8 mb-10">
+                                <CustomSelect 
+                                    label="Subject Area"
+                                    value={subject}
+                                    onChange={setSubject}
+                                    options={[
+                                        { value: 'Math', label: 'Mathematics' },
+                                        { value: 'Science', label: 'Science (Coming Soon)', disabled: true },
+                                        { value: 'History', label: 'History (Coming Soon)', disabled: true }
+                                    ]}
+                                />
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-bold text-md-outline uppercase tracking-widest ml-1">Difficulty</label>
+                                    <div className="flex gap-2">
+                                        {['easy', 'medium', 'hard'].map(d => (
+                                            <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-3 rounded-xl font-bold border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-md-primary border-md-primary text-white shadow-md' : 'bg-md-surface-variant/20 border-md-outline/10 text-md-on-surface-variant hover:bg-md-surface-variant/40'}`}>
+                                                {d}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                                <button onClick={() => handleHostGame()} disabled={isHosting} className="w-full py-4 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-transform flex justify-center disabled:opacity-30">
-                                    {isHosting ? <span className="animate-pulse">Opening Arena...</span> : 'Generate Arena'}
-                                </button>
                             </div>
+                            <button onClick={() => handleHostGame()} disabled={isHosting} className="w-full py-5 bg-md-primary rounded-[1.5rem] text-md-on-primary font-bold text-base tracking-wide shadow-lg shadow-md-primary/10 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-30">
+                                {isHosting ? 'Opening Arena...' : 'Create Arena'}
+                            </button>
                         </div>
 
                         {/* JOIN PANEL */}
-                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.5rem] p-5 md:p-8 flex flex-col shadow-2xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative z-10 flex flex-col h-full">
-                                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-2xl mb-4 shadow-inner border border-indigo-500/30">
-                                    🔗
-                                </div>
-                                <h2 className="text-xl font-black text-white mb-1 uppercase italic tracking-tight">Join Match</h2>
-                                <p className="text-slate-400 font-medium text-[11px] mb-8">Enter an Arena Code to join a battle.</p>
-                                <div className="mt-auto space-y-6">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</label>
-                                        <div className="flex gap-2">
-                                            {['easy', 'medium', 'hard'].map(d => (
-                                                <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-2 rounded-xl font-black border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-indigo-500 border-indigo-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-slate-500 hover:bg-white/10'}`}>
-                                                    {d}
-                                                </button>
-                                            ))}
-                                        </div>
+                        <div className="bg-md-surface border border-md-outline/10 rounded-[2rem] p-8 md:p-10 flex flex-col shadow-lg hover:border-md-secondary/30 transition-colors">
+                            <div className="w-14 h-14 rounded-2xl bg-md-secondary/10 flex items-center justify-center text-3xl mb-6 border border-md-secondary/20">
+                                🔗
+                            </div>
+                            <h2 className="text-2xl font-bold text-md-on-surface mb-2">Join Match</h2>
+                            <p className="text-md-on-surface-variant text-xs mb-8">Enter an Arena Code to join a battle.</p>
+                            <div className="mt-auto space-y-8">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-bold text-md-outline uppercase tracking-widest ml-1">Target Difficulty</label>
+                                    <div className="flex gap-2">
+                                        {['easy', 'medium', 'hard'].map(d => (
+                                            <button key={d} onClick={() => setDifficulty(d)} className={`flex-1 py-3 rounded-xl font-bold border transition-all text-[10px] uppercase tracking-widest ${difficulty === d ? 'bg-md-secondary border-md-secondary text-white shadow-md' : 'bg-md-surface-variant/20 border-md-outline/10 text-md-on-surface-variant hover:bg-md-surface-variant/40'}`}>
+                                                {d}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <input type="text" maxLength={6} placeholder="ARENA CODE" value={joinPin} onChange={(e) => setJoinPin(e.target.value.toUpperCase())} className="w-full bg-black/40 border border-white/10 rounded-xl px-6 py-5 text-center text-3xl font-black text-indigo-300 tracking-[0.5em] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-700 transition-all font-mono" />
-                                    <button onClick={handleJoinGame} disabled={isJoining || joinPin.length !== 6} className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl text-white font-black text-lg tracking-wider uppercase shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex justify-center">
-                                        {isJoining ? <span className="animate-pulse">Linking Arena...</span> : 'Enter Battle'}
-                                    </button>
                                 </div>
+                                <input type="text" maxLength={6} placeholder="ARENA CODE" value={joinPin} onChange={(e) => setJoinPin(e.target.value.toUpperCase())} className="w-full bg-md-surface-variant/20 border border-md-outline/10 rounded-2xl px-6 py-5 text-center text-3xl font-bold text-md-primary tracking-[0.4em] focus:outline-none focus:border-md-primary/50 focus:ring-1 focus:ring-md-primary placeholder:text-md-outline/30 transition-all font-mono" />
+                                <button onClick={handleJoinGame} disabled={isJoining || joinPin.length !== 6} className="w-full py-5 bg-md-secondary rounded-[1.5rem] text-md-on-secondary font-bold text-base tracking-wide shadow-lg shadow-md-secondary/10 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-transform">
+                                    {isJoining ? 'Linking Arena...' : 'Join Battle'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -411,51 +403,51 @@ function LobbyContent() {
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md"
+                    className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-md-surface/90 backdrop-blur-md"
                 >
                     <motion.div 
-                        initial={{ scale: 0.9, y: 20 }}
+                        initial={{ scale: 0.95, y: 20 }}
                         animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.9, y: 20 }}
-                        className="bg-white/10 border border-white/10 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl relative overflow-hidden"
+                        exit={{ scale: 0.95, y: 20 }}
+                        className="bg-md-surface border border-md-outline/10 rounded-[2.5rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden"
                     >
-                        <div className="absolute top-0 right-0 p-6">
-                            <button onClick={() => setShowRules(false)} className="text-2xl opacity-50 hover:opacity-100 transition-opacity">✕</button>
+                        <div className="absolute top-0 right-0 p-8">
+                            <button onClick={() => setShowRules(false)} className="text-xl text-md-outline hover:text-md-on-surface transition-colors">✕</button>
                         </div>
                         
-                        <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white mb-6">Battle Rules</h2>
+                        <h2 className="text-3xl font-bold text-md-on-surface mb-8">Battle Rules</h2>
                         
-                        <div className="space-y-6 text-slate-300">
-                            <div className="flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xl shrink-0">🧠</div>
+                        <div className="space-y-8">
+                            <div className="flex gap-5">
+                                <div className="w-12 h-12 rounded-full bg-md-primary/10 flex items-center justify-center text-2xl shrink-0">🧠</div>
                                 <div>
-                                    <h3 className="font-black text-white uppercase text-xs tracking-widest mb-1">Neural Speed</h3>
-                                    <p className="text-xs leading-relaxed font-medium">This is an asynchronous race. There are no turns. Answer as fast as possible to pull the rope.</p>
+                                    <h3 className="font-bold text-md-on-surface text-sm uppercase tracking-wider mb-1">Neural Speed</h3>
+                                    <p className="text-xs leading-relaxed text-md-on-surface-variant">This is a race. No turns. Answer as fast as possible to pull the rope to your side.</p>
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-xl shrink-0">⚖️</div>
+                            <div className="flex gap-5">
+                                <div className="w-12 h-12 rounded-full bg-md-secondary/10 flex items-center justify-center text-2xl shrink-0">⚖️</div>
                                 <div>
-                                    <h3 className="font-black text-white uppercase text-xs tracking-widest mb-1">Difficulty Equalizer</h3>
-                                    <p className="text-xs leading-relaxed font-medium">"Hard" questions are 3x more powerful than "Easy" ones. A Professor and Student can play fairly!</p>
+                                    <h3 className="font-bold text-md-on-surface text-sm uppercase tracking-wider mb-1">Difficulty Equalizer</h3>
+                                    <p className="text-xs leading-relaxed text-md-on-surface-variant">"Hard" questions are 3x more powerful. Players of different levels can compete fairly.</p>
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-xl shrink-0">🏁</div>
+                            <div className="flex gap-5">
+                                <div className="w-12 h-12 rounded-full bg-md-success/10 flex items-center justify-center text-2xl shrink-0">🏁</div>
                                 <div>
-                                    <h3 className="font-black text-white uppercase text-xs tracking-widest mb-1">Victory Condition</h3>
-                                    <p className="text-xs leading-relaxed font-medium">Pull the rope completely to your side (-100 or 100) to win the match.</p>
+                                    <h3 className="font-bold text-md-on-surface text-sm uppercase tracking-wider mb-1">Victory Condition</h3>
+                                    <p className="text-xs leading-relaxed text-md-on-surface-variant">Pull the rope completely to your side (±100) to win the match instantly.</p>
                                 </div>
                             </div>
                         </div>
 
                         <button 
                             onClick={() => setShowRules(false)}
-                            className="w-full mt-8 py-4 bg-white text-slate-950 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-purple-500 hover:text-white transition-all shadow-xl"
+                            className="w-full mt-10 py-5 bg-md-on-surface text-md-surface rounded-2xl font-bold text-sm tracking-wider hover:opacity-90 transition-all shadow-xl shadow-black/5"
                         >
-                            Understood
+                            Got it, let's go!
                         </button>
                     </motion.div>
                 </motion.div>
