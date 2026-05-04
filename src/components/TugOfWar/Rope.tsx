@@ -39,11 +39,13 @@ export default function Rope({ position }: RopeProps) {
     const sag = useTransform(tension, [0, 1], [15, 2]);
 
     // SVG Path calculation
-    const pathData = useTransform([smoothPos, sag], ([p, s]) => {
-        const x1 = 8 + (p < 0 ? (p / 100) * 15 : (p / 100) * 45); // Left anchor
-        const x2 = 92 - (p > 0 ? (p / 100) * 15 : (p / 100) * 45); // Right anchor
+    const pathData = useTransform([smoothPos, sag], ([p, s]: any[]) => {
+        const pNum = p as number;
+        const sNum = s as number;
+        const x1 = 8 + (pNum < 0 ? (pNum / 100) * 15 : (pNum / 100) * 45); // Left anchor
+        const x2 = 92 - (pNum > 0 ? (pNum / 100) * 15 : (pNum / 100) * 45); // Right anchor
         const midX = (x1 + x2) / 2;
-        const midY = 50 + (s as number);
+        const midY = 50 + sNum;
         // Use unitless coordinates for SVG path
         return `M ${x1} 50 Q ${midX} ${midY} ${x2} 50`;
     });
